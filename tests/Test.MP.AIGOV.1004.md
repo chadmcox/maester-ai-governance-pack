@@ -1,3 +1,9 @@
+> [!NOTE]
+> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (Graph only, no Agent 365
+> license). The run correctly found 10 real Agent Identity / Agent Identity Blueprint objects with
+> exactly one sponsor and zero owners, with accurate object IDs, display names, and object types in
+> the result table.
+
 Checks every Agent Identity, Agent Identity Blueprint, and Blueprint Principal for exactly one
 assigned sponsor and zero owners. A sponsor provides organizational accountability for why the agent
 exists; an owner can administer the object itself. An object with one sponsor and no owners is a
