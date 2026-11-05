@@ -27,7 +27,7 @@ jobs:
         with:
           path: pack
 
-      - name: Checkout Maester main (provisional: Packs tooling is unreleased)
+      - name: "Checkout Maester main (provisional: Packs tooling is unreleased)"
         uses: actions/checkout@v4
         with:
           repository: maester365/maester
