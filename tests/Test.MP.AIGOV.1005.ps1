@@ -42,6 +42,11 @@ function Test-MPAIGOV1005 {
 
         # Each tag filter is a separate call; servicePrincipals does not support a single 'any of these
         # tags' filter. Results are merged and de-duplicated by object ID below.
+        #
+        # No ConsistencyLevel/$count=true needed here: per Microsoft Learn's advanced-queries
+        # reference (https://learn.microsoft.com/en-us/graph/aad-advanced-queries, servicePrincipal
+        # properties table), tags/any(p:p) supports both eq and startsWith as "Default+Advanced",
+        # meaning both already work without the advanced query parameters.
         $TagFilters = @(
             "tags/any(t:t eq 'AgentCreatedBy:CopilotStudio')"
             "tags/any(t:t eq 'AgenticApp')"
@@ -52,11 +57,11 @@ function Test-MPAIGOV1005 {
 
         $ClassicAgents = @{}
         foreach ($TagFilter in $TagFilters) {
-            $Matches = @(
+            $TaggedSps = @(
                 Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'servicePrincipals' `
                     -Filter $TagFilter -Select @('id', 'appId', 'displayName', 'tags')
             )
-            foreach ($Match in $Matches) {
+            foreach ($Match in $TaggedSps) {
                 $ObjectId = [string]$Match.id
                 if ([string]::IsNullOrWhiteSpace($ObjectId)) { continue }
                 if ($AgentIdObjectIds.ContainsKey($ObjectId)) { continue }
