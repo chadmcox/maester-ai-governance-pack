@@ -1,0 +1,182 @@
+# Coverage matrix — Maester AI-governance findings pack
+
+Sorted Gap → Partial → Covered. Every "Existing Maester test" cites file path at
+commit `616559854634e5150dbde69850c4224191635bb1` of `maester365/maester`. Severity
+uses Maester's real 5-value scale (`Critical/High/Medium/Low/Info`). Framework
+mapping types: **Direct** = Direct requirement, **Support** = Supporting alignment,
+**Org** = Organization policy, **Unmapped**.
+
+## GAP — no existing Maester test touches this condition
+
+| # | Surface | Candidate finding | Trigger | Data source + permission | Existing test(s) | Coverage | Severity | Framework mapping | Type | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| G1 | Agents | Catalog adoption below 5% in 90 days (tenant-wide, not per-agent) | `getMicrosoft365CopilotUsageUserDetail(period='D90')` active-user ratio < 5% of licensed seats | Graph beta, `Reports.Read.All` | none | Gap | Low | Unmapped | — | Tenant-level adoption metric; no agent-level Maester test does this aggregate math. Logic already exists in `chadmcox/Copilot` (ported concept, not code). Pilot item `MP.AIGOV.1001` additionally requires ≥1 agent in the package catalog, ≥20 reported users, and a name-matched activity column — see pilot doc. |
+| G3 | Agents | Agent assigned to users directly instead of via a group | Assignment list contains individual user principals rather than group objects | Graph v1.0 `GET /copilot/admin/catalog/packages/{id}` (`allowedUsersAndGroups`/`acquireUsersAndGroups` filtered to `resourceType eq 'user'` — per-package detail call only, not the list endpoint; see pilot `MP.AIGOV.1003`) | none | Gap | Low | Org | — | No Maester test inspects assignment-target type (user vs. group) for any object in this area. |
+| G4 | Agents | Unclear name/description (empty or placeholder display name/description) | `displayName`/`description` empty, whitespace, or matches a placeholder regex (`test`, `demo`, `tbd`) | Graph v1.0 | none | Gap | Info | Org | — | Pure hygiene finding; no equivalent exists. |
+| G5 | Blueprints / Blueprint Principals | Single sponsor (exactly one, where policy expects redundancy) and no owner as backup | Sponsor count == 1 on `.../sponsors` AND zero active owners | Graph v1.0 `agentIdentityBlueprints/{id}/sponsors`, `.../blueprintPrincipals/{id}/sponsors` | MT.1205 — "Agent Identity Blueprints and Blueprint Principals should have assigned sponsors" (full source read: queries the same `/sponsors` sub-resource on both object types, fails only when sponsor count == 0 or every sponsor is disabled) | Gap (adjacent to a Covered test — see note) | Low | Org | — | MT.1205 only fires at **zero** sponsors (or all-disabled). A tenant with exactly one enabled sponsor and no owner passes MT.1205 today; this single-point-of-failure condition is the real Gap. Scope corrected from "Agent identities" (generic) to Blueprints/Blueprint Principals specifically — MT.1205 does not cover plain Agent Identities or Agent Users, and no evidence those object types expose a `/sponsors` relationship at all (unconfirmed, flagged for Phase 2). Pilot item `MP.AIGOV.1004` has since confirmed agent identities **do** expose `$expand=sponsors` and extends this rule to all three object types — see pilot doc. |
+| G2a | Agents | Agent available/assigned to everyone — merged finding, covering both the Copilot-Studio-environment "Everyone" assignment **and** `availableTo=allowedForAll`/`deployedTo=acquiredForAll` for a custom/external (non-Microsoft-published) package | Either: Copilot Studio agent assignment scope = Everyone/tenant default rather than a named group; **or** `copilotPackage.availableTo == allowedForAll` OR `.deployedTo == acquiredForAll` AND `publisher` is not on the Microsoft-published allowlist (see pilot doc `MP.AIGOV.1007`) | Copilot Studio admin surface (Dataverse) for the assignment-scope condition; Graph v1.0 `GET /copilot/admin/catalog/packages`, `CopilotPackages.Read.All` (license-gated) for the package-catalog condition; confirmed `copilotPackage.availableTo` (`packageAllowStatus`) and `.deployedTo` (`packageAcquireStatus`) are real, documented, GA (v1.0) properties | MT.1113 (broad **sharing/access-control policy** — adjacent, not the same property) | Gap | High | nist-800-53-r5:AC-6 | Support | **Merged this revision** — the original G2 (Copilot-Studio "Everyone" assignment) and G2a (package-catalog allow/deploy status) are the same underlying governance question (is this agent available to everyone, tenant-wide) reached through two different data sources; tracked as one finding with two possible evidence sources rather than two separate rows. Severity raised to High (was Medium on the old G2) to match the package-catalog condition's severity, since either source alone is sufficient to trigger it. |
+| G7 | Agents without Agent ID | Classic Copilot Studio service principal not registered in Agent ID (phrased as a state) | Service principal has one of the Copilot Studio tags (`AgentCreatedBy:CopilotStudio`, `AgenticApp`, `AIAgentBuilder`, `AgenticInstance`, `power-virtual-agents-*`) but has no matching `agentIdentityBlueprintId`/`agentIdentity` object | Graph v1.0, filter `servicePrincipals` by the Copilot Studio tag set (same tags used by pilot item `MP.AIGOV.1005`), cross-reference against `servicePrincipals/microsoft.graph.agentIdentity` | none (MT.1200 checks the reverse direction: agent identity → blueprint, not classic bot → agent identity) | Gap | Info | Org | — | Trigger corrected to match the pilot's actual data source (service-principal tags), not a "Copilot Studio bot list," which was never a confirmed Graph-queryable object in this research. Confirmed no existing test walks from the classic/legacy object to Agent ID; MT.1200/1201/1203 all start from the *new* Agent ID objects. |
+| G8 | Connectors | Agent using non-Microsoft/custom connector with no DLP policy covering it | Power Platform connector list for an environment includes a non-Microsoft connector id not present in any `ruleSet`/DLP policy's connector groups | Power Platform API `connectivity/environments/{id}/connectors`, `Get-AdminDlpPolicy` or `governance/ruleBasedPolicies` | none | Gap | Medium | Unmapped | — | **Corrected**: MT.1118 is not an "unapproved connector" test (see C6 fix) — it checks the *authentication mode* a connection uses, not whether the connector itself is on a DLP-approved list. There is still no Maester test that cross-references connectors against DLP policy coverage; this remains a clean Gap, not Partial. |
+| G10 | Connectors | Connector allowed in Business group that should be Blocked (tenant allow/deny-list drift) | Business-classified group in a DLP policy contains a connector the tenant baseline considers Blocked-tier | Power Platform API/DLP policy | none | Gap | Medium | Org | — | Requires an org-defined baseline list; not a generic Maester-testable condition without tenant input. |
+| G11 | Connectors | Environment with no DLP policy at all | Environment ID absent from every DLP policy's environment scope | Power Platform API | MT.1181 is a **Conditional Access** test for agent risk sign-in blocking, not DLP — unrelated surface, not a true adjacent test | Gap | Medium | cisa-scuba (verify — SCuBA's Power Platform baseline doc was not re-checked this run for a DLP-specific MS.POWERPLATFORM.* ID) | Unmapped (pending verify) | — |
+| G12 | Topic hygiene (not Skills — see note) | Topic unreviewed (no recorded review/approval metadata) | Topic object has no owner-review timestamp/field | Same Copilot Studio Topic surface MT.1121 reads (Dataverse via `Get-MtAIAgentInfo`, not pure Graph) | none | Gap | Low | Org | — | **Relabeled.** "Skills" and Copilot Studio "Topics" are not the same object — Microsoft Learn's Skills model (Generative/Markdown `SKILL.md` packages vs. deterministic Topics) is a separate, newer Cowork-plugin concept. G12–G14 were originally filed as "Skills" findings but actually describe Topic-level hygiene; renamed accordingly. The real Skills/Tools(MCP) surface is addressed separately below (see "Skills and MCP — surface redefinition"). |
+| G13 | Topic hygiene (not Skills — see note) | Topic broad scope (no custom-instruction/scope boundary at the individual Topic level) | Topic-level instruction/scope breadth | Same surface as MT.1121 (Dataverse) | MT.1121 (agent-level custom instructions) | Partial | Medium | Unmapped | — | MT.1121 checks the **agent's** overall custom instructions exist; it does not check an individual **Topic's** own scope/breadth. |
+| G14 | Topic hygiene (not Skills — see note) | Stale Topic (not modified in N days — same concept as MT.1117 but at Topic grain, not published-agent grain) | Topic `LastModifiedTime` beyond threshold | Same surface as MT.1117 (Dataverse) | MT.1117 (agent-level dormancy) | Partial | Low | Org | — | Same object-granularity gap as G13: agent-level vs. topic-level. |
+| G14a | Blueprints | Client credential nearing expiration (a future warning window, before actual expiry) | Secret `endDateTime` within N days of now but not yet past | Graph v1.0 `agentIdentityBlueprints/{id}` passwordCredentials | MT.1208 (full source read: flags **already-expired** secrets, secrets valid >730 days, >2 active secrets, and a secret kept alongside a federated identity credential — it has no forward-looking "expiring within N days" warning condition) | Gap | Low | nist-800-53-r5:IA-5 (Supporting — MT.1208 itself uses this control ID for the related expired-credential condition) | Support | Granular split of the original "credentials expiring or expired" candidate after the full MT.1208 read: "expired" is Covered (see C-table), "nearing expiration" is not. |
+| G15 | Billing | Spending policy with no ceiling (no credit cap / unlimited) | `spendingPolicies/{id}` has no `limit`/cap property set, or cap is null/unbounded | Graph beta `/copilot/costManagement/spendingPolicies` | none | Gap | Medium | Unmapped | — | New surface; no equivalent Maester test exists anywhere in the repo (grepped for `spendingPolic` and `costManagement` — zero hits outside this research). |
+| G16 | Billing | Policy group with fewer than 2 owners, or no description | Group backing a spending-policy audience has <2 owners / empty description | Graph v1.0 (group object) + beta cost-management link | none | Gap | Low | Org | — | — |
+| G17 | Billing | Members assigned directly to a spending policy (not via group) | `assignedGroups` audience list bypassed by direct member assignment, if the API allows it | Graph beta `/copilot/costManagement/spendingPolicies/{id}/.../assignedGroups` | none | Gap | Low | Org | — | Confirm the API actually permits direct (non-group) assignment before finalizing this one — not verified this run. |
+| G18 | Billing | Overlapping/contradictory spending policies (two policies both scope the same group/service with conflicting caps) | Cross-policy audience-overlap detection | Graph beta, same endpoint | none | Gap | Medium | Org | — | — |
+| G19 | Agents | Cloud agent discovered by Defender but absent from the Agent 365 registry | Defender XDR Advanced Hunting/App Governance surfaces an agent/app identity with no matching `microsoft.graph.agentIdentity` object | Defender Advanced Hunting (KQL) + Graph v1.0 `servicePrincipals/microsoft.graph.agentIdentity` cross-reference | none | Gap | Medium | Unmapped | — | **Defender-dependent, explicitly outside the Graph-only pilot.** Distinct from G7: G7 is the classic-Copilot-Studio-SP-tag-based state ("not registered in Agent ID"); this is Defender's independent discovery signal catching agents/apps outside both the classic-SP-tag detection and the Agent ID registry entirely. Needs MDA App Governance/MDI, same dependency class as MT.1077-1079. |
+| G20 | Tools/MCP | MCP server endpoint reachable over plain `http://` instead of `https://` | Discovered MCP server URL scheme is `http` | Defender Advanced Hunting (KQL) — no Graph/Copilot-Studio surface exposes raw MCP server URLs for inspection | none — MT.1120 is a different check (reviews whether MCP **tools** have been reviewed/approved, via Dataverse agent-tool metadata; it does not inspect the MCP server's URL scheme) | Gap | High | Unmapped | — | **Defender-dependent, explicitly outside the Graph-only pilot.** Corrected this revision: this is not the same finding as C8/MT.1120 — MT.1120 is tool-review hygiene, not transport-security inspection of the MCP endpoint itself. |
+| G21 | Tools/MCP | MCP server hosted on a non-Microsoft host (external/unexpected domain) | Discovered MCP server URL host is outside an allowlisted Microsoft domain set | Defender Advanced Hunting (KQL) — same dependency as G20; no Graph/Copilot-Studio surface exposes this | none | Gap | Medium | Unmapped | — | **Defender-dependent, explicitly outside the Graph-only pilot.** Same correction as G20: not covered by MT.1120, which only checks tool-review status, not server host/domain. |
+| G22 | Agents | Blocked package with an open pending request | Package status = Blocked AND a pending install/consent request exists | Graph v1.0 `copilot/admin/catalog/packages` (`isBlocked` + `requestStatus`/`requestType` filters; confirmed both properties exist, license-gated) | none — MT.1118 does not apply here (it is the maker-auth connection check, not a package-request-status check) | Gap | Low | Org | — | **Reclassified from Partial.** No Maester test reads package *request* status at all; this is the `chadmcox/Copilot` "blocked + pending" finding, confirmed as a real, distinct Graph v1.0 object (the Package Management API's `requestStatus`/`requestType` filters, GA since the referenced "August 2026" what's-new entry). This is pilot item `MP.AIGOV.1002`. |
+
+## PARTIAL — an existing test touches the surface but not the exact condition
+
+| # | Surface | Candidate finding | Trigger | Data source + permission | Existing test(s) | Coverage | Severity | Framework mapping | Type | What's missing |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P2 | Blueprints | Client secret retained where a certificate (or FIC) would remove the live fallback (as a standalone preference, not only when paired with a FIC) | Blueprint has any `passwordCredentials` entry, independent of whether a FIC also exists | Graph v1.0 `agentIdentityBlueprints/{id}` | MT.1208 (full source read: only flags secret-retention when a FIC is **also** present on the same blueprint — "a live fallback that defeats the point of migrating to FIC") | Partial | Low | Org | — | A blueprint with only a plain client secret and **no** FIC passes MT.1208 entirely; the "prefer certificate/FIC over secret" baseline is not enforced as a standalone condition, only the secret+FIC combination. |
+| P3 | Billing | — (no Partial billing items; all billing candidates are clean Gaps since no Maester test touches `/copilot/costManagement` at all) | | | | | | | | |
+
+**Reclassified this revision:** the former P1 ("Blocked package with an open
+pending request") moves to the Gap table as **G22** — per review feedback, there is
+no adjacent Maester test at all for package request-status (the entry previously
+listed "none" under Existing test(s), which is a Gap signature, not Partial).
+
+**Rows removed this revision (G6, P2–P5 as originally numbered):** the prior draft
+left "moved to Covered" stub rows in this table after re-reading source and finding
+they were fully covered. Per review feedback those stubs are deleted outright rather
+than cross-referenced — see the Covered table below for MT.1204 (owners), MT.1206
+(inactivity, includes never-signed-in), MT.1207 (foreign/multi-tenant privileged
+role), MT.1223 (high-risk Graph permissions), and MT.1209/MT.1210 (privileged
+directory roles). The stray MT.1181 cross-reference under the old G11 note has also
+been removed — MT.1181 is Conditional Access, not DLP, and is not an adjacent test
+for that finding.
+
+## COVERED — an existing Maester test already implements this exact finding
+
+| # | Surface | Candidate finding | Existing test | File | Severity | Control (as shipped) |
+|---|---|---|---|---|---|---|
+| C1 | Agents | Broad sharing/access-control policy on an agent | MT.1113 | `tests/maester/copilot-studio/Test.MT.1113.ps1` | High | `nist-800-53-r5:AC-3` |
+| C2 | Agents | Agent allows unauthenticated use | MT.1114 | `tests/maester/copilot-studio/Test.MT.1114.ps1` | High | `nist-800-53-r5:IA-2` |
+| C3 | Agents | Risky HTTP configuration (non-443 port / HTTP action) | MT.1115 | `tests/maester/copilot-studio/Test.MT.1115.ps1` | Medium | `nist-800-53-r5:SC-7` |
+| C4 | Agents | Agent sends email with AI-controlled inputs | MT.1116 | `tests/maester/copilot-studio/Test.MT.1116.ps1` | High | `nist-800-53-r5:AC-4` |
+| C5 | Agents | Published agent dormant (no modification in 180 days) | MT.1117 | `tests/maester/copilot-studio/Test.MT.1117.ps1` — reads Copilot Studio via `Get-MtAIAgentInfo`, **Dataverse-backed, not pure Graph** | Low | none shipped |
+| C6 | Connectors | Connection uses maker (author) authentication instead of invoker/end-user authentication | MT.1118 — "AI agents should not use author (maker) authentication for connections" (real title, corrected; full source read: parses each tool's YAML `Data` for a `connectionReference:`, flags it unless the YAML also sets `mode: Invoker`) | `tests/maester/copilot-studio/Test.MT.1118.ps1` — same Dataverse surface as MT.1117/1121 | Declared `Medium`, **but the runtime finding call emits `-Severity "High"` — a mismatch between the declared attribute and the shipped result, worth citing precisely** | none shipped |
+| C7 | Agents | Hard-coded credentials in topic logic | MT.1119 | `tests/maester/copilot-studio/Test.MT.1119.ps1` | High | `nist-800-53-r5:IA-5(7)` |
+| C8 | Agents | MCP server tools used without review | MT.1120 | `tests/maester/copilot-studio/Test.MT.1120.ps1` | Medium | none shipped |
+| C9 | Agents | Generative orchestration enabled with no custom instructions | MT.1121 | `tests/maester/copilot-studio/Test.MT.1121.ps1` — Dataverse-backed via `Get-MtAIAgentInfo`, same as MT.1117/1118 | Medium | none shipped |
+| C10 | Agents | Orphaned ownership (no owner, or every owner disabled) | MT.1122 | `tests/maester/copilot-studio/Test.MT.1122.ps1` | Medium | none shipped |
+| C11 | Agent identities | No agent identity ↔ blueprint principal match (orphaned) | MT.1200 | `tests/maester/entra/Test.MT.1200.ps1` | Medium | none shipped |
+| C12 | Agent identities | Agent user with no parent agent identity | MT.1201 | `tests/maester/entra/Test.MT.1201.ps1` | Medium | none shipped |
+| C13 | Agent identities | Blueprint principal with no matching blueprint | MT.1203 | `tests/maester/entra/Test.MT.1203.ps1` | Medium | none shipped |
+| C14 | Agent identities | No sponsor/owner on any Agent ID object | MT.1204 | `tests/maester/entra/Test.MT.1204.ps1` | Medium | `nist-800-53-r5:AC-2` |
+| C15 | Agent identities | Sponsor assigned but disabled/deleted (zero *active* owners) | MT.1204 | same file — checks `accountEnabled` on owners, not merely presence | Medium | `nist-800-53-r5:AC-2` |
+| C16 | Blueprints / Blueprint Principals | Zero sponsors, or every sponsor disabled — scoped strictly to these two object types, via `.../sponsors` (not `.../owners`) | MT.1205 — "Agent Identity Blueprints and Blueprint Principals should have assigned sponsors" (full source read) | `tests/maester/entra/Test.MT.1205.ps1` | Medium | `nist-800-53-r5:AC-2` |
+| C17a | Blueprints | Client credential already expired (`passwordCredentials[].endDateTime` in the past) | MT.1208 — "should not have expired, excessive, or long-lived client credentials" (full source read) | `tests/maester/entra/Test.MT.1208.ps1` | Declared `Medium`, runtime detail call for this condition emits `-Severity 'High'` (same declared/shipped mismatch as MT.1118) | `nist-800-53-r5:IA-5` |
+| C17b | Blueprints | Client credential validity exceeds 730 days (configurable `$MaxValidityDays`) | MT.1208 (same file, second condition) | `tests/maester/entra/Test.MT.1208.ps1` | as above | `nist-800-53-r5:IA-5` |
+| C17c | Blueprints | More than 2 active client secrets (configurable `$MaxActiveSecrets`) | MT.1208 (same file, third condition) | `tests/maester/entra/Test.MT.1208.ps1` | as above | `nist-800-53-r5:IA-5` |
+| C17d | Blueprints | Client secret retained alongside a federated identity credential (a live fallback that defeats FIC migration) | MT.1208 (same file, fourth condition) | `tests/maester/entra/Test.MT.1208.ps1` | as above | `nist-800-53-r5:IA-5` |
+| C18 | Agent identities | High-risk Graph app permission grant | MT.1223 | `tests/maester/entra/Test.MT.1223.ps1` | High | `nist-800-53-r5:AC-6` |
+| C19 | Agent identities | Privileged directory role on agent identity | MT.1209 | `tests/maester/entra/Test.MT.1209.ps1` | n/a | n/a |
+| C20 | Agent identities | Privileged role / role-assignable-group membership for an agent **user** | MT.1210 | `tests/maester/entra/Test.MT.1210.ps1` | n/a | n/a |
+| C21 | Blueprints | allAllowed inheritable permissions (delegated scopes or app roles) | MT.1211 | `tests/maester/entra/Test.MT.1211.ps1` (full source read) | High | `nist-800-53-r5:AC-6` |
+| C22 | Blueprints | Foreign/multi-tenant blueprint holding privileged directory role | MT.1207 | `tests/maester/entra/Test.MT.1207.ps1` | n/a | n/a |
+| C23 | Blueprint principals | Application roles exposed without requiring assignment | MT.1212 — "should require assignment for the application roles they expose" | `tests/maester/entra/Test.MT.1212.ps1` | n/a | n/a |
+| C24 | Blueprints | Wildcard or plain-HTTP redirect URIs | MT.1213 — "should not use wildcard or plain-http redirect URIs" | `tests/maester/entra/Test.MT.1213.ps1` | n/a | n/a |
+| C25 | Agent identities | Never signed in / inactive beyond 180 days (default, configurable `$MaxInactiveDays`), including a "fully dormant fleet with a live parent blueprint credential" compound signal | MT.1206 | `tests/maester/entra/Test.MT.1206.ps1` (full source read) | Medium | `nist-800-53-r5:AC-2(3)` |
+| C26 | Blueprint creation governance | Users able to create Agent Identity Blueprints without restriction | MT.1225 — "Users should not be able to create Agent Identity Blueprints" | `tests/maester/entra/Test.MT.1225.ps1` | n/a | n/a |
+| C27 | Conditional Access | No CA policy blocking high-risk agent sign-ins | MT.1181 | `tests/maester/entra/Test.MT.1181.ps1` | High | `nist-800-53-r5:AC-2(12)`, `AC-2(13)` |
+| C28 | Privileged apps (not agent-specific, but named overlap to confirm) | App registrations with privileged Graph permissions that still have owners | MT.1077 | `tests/maester/xspm/Test.MT.1077.ps1` | Medium | `nist-800-53-r5:AC-6` |
+| C29 | Privileged apps | App registrations with privileged directory roles that still have owners | MT.1078 | `tests/maester/xspm/Test.MT.1078.ps1` | Medium | `nist-800-53-r5:AC-6` |
+| C30 | Privileged apps | Privileged API permissions on service principals, unused | MT.1079 | `tests/maester/xspm/Test.MT.1079.ps1` | Medium | `nist-800-53-r5:AC-6` |
+
+**Ruled out as NOT agent-related** (the original subagent pass wrongly included this
+as part of the MT.12xx range): **MT.1252** — real title is "Apps scoped with
+Exchange RBAC for Applications should not hold the same or a broader permission
+tenant-wide in Microsoft Entra ID." This is a generic Exchange-RBAC privilege-escalation
+check, unrelated to Agent ID. Confirmed directly from source; excluded from this
+pack's scope entirely.
+
+**`Test-MtCaAgentRiskBlockPolicy`** — not a separate function; the described logic
+lives inline inside `Test.MT.1181.ps1` itself (reads `Get-MtConditionalAccessPolicy`,
+checks `conditions.agentIdRiskLevels -match 'high'` and
+`grantControls.builtInControls -match 'block'`). There is no standalone
+`Test-MtCaAgentRiskBlockPolicy` function to reuse or extend; MT.1181 **is** that
+logic.
+
+## Skills and MCP — surface redefinition (replaces the earlier Skills section)
+
+A direct `GET /v1.0/copilot/admin/catalog/packages?$expand=packageElementDetail`
+call against the test tenant returned `403 Forbidden` ("not authorized by the
+available scopes"). Cross-checked against Microsoft Learn: the Package Management
+API is GA at v1.0, needs `CopilotPackages.Read.All`, **and requires a Microsoft
+Agent 365 license** — the test tenant does not have one, so the 403 is a license
+gap, not a permission-consent gap. This directly confirms the Skip-without-license
+requirement for AIGOV.2/.3/.6 in the pilot.
+
+Without a live result, the documented schema is the best available evidence:
+- `copilotPackage.elementTypes` (String collection) — Learn's own example values are
+  `bot`, `declarativeAgent`.
+- `packageElementDetail.elementType` (String) — Learn's own example values are
+  `CustomEngineCopilot`, `DeclarativeAgent`, `Bot`.
+- Separately, Microsoft's "Build plugins for Copilot Cowork" packaging guide
+  describes a **manifest-level** `agentSkills` section (`SKILL.md` files) and an
+  `agentConnectors` section (MCP/remote-connector tool descriptions) as parts of a
+  Cowork plugin **package file**, not as documented `elementType` enum members.
+
+**Conclusion:** "Skills" (Markdown `SKILL.md` packages) and MCP/Tools connectors are
+real, distinct Cowork-plugin manifest concepts, but there is no published or
+tenant-confirmed evidence that the Package Management API's `elementType` enum
+actually surfaces `agentSkills`/`agentConnectors` as queryable values — the
+documented enum only shows `Bot`/`DeclarativeAgent`/`CustomEngineCopilot`. Any
+Skills- or MCP-surface finding built on `packageElementDetail` is **not
+independently testable with current evidence** and must stay out of scope until
+confirmed live against a tenant with an Agent 365 license (flagged as an open
+question). This also means G12–G14 (relabeled Topic hygiene above) are the only
+currently-evidenced findings for the "Topics" side of this surface; true
+`SKILL.md`-level findings have no confirmed data source yet.
+
+## CIS Controls v8.1 and CISA agentic-AI risk category mapping (Supporting alignment)
+
+Per review feedback, this matrix adds CIS Controls v8.1 Safeguards and the CISA/NSA/
+Five-Eyes *Careful Adoption of Agentic AI Services* risk categories (privilege,
+design and configuration, behavioral, structural, accountability) as a second,
+explicitly **Supporting alignment** layer — never Direct requirement — sourced from
+`chadmcox/Copilot`'s own `Agent and Tools Health Check/Cowork/plugin/skills/agent-tools-health/references/guidance.md`.
+That file states plainly: "Which safeguard and which CISA category each check maps
+to is this repo's judgment, not something CIS or CISA published" — the same caveat
+applies here. NIST CSF 2.0 is dropped entirely per your decision; NIST 800-53 Rev. 5
+stays, already cited per-row above where Maester ships a Control.
+
+| Finding grain (maps across one or more G/P/C rows above) | CIS v8.1 Safeguard(s) | CISA risk category |
+|---|---|---|
+| Agent available to everyone / assigned to users not groups (G2a, G3, C1) | 6.1, 6.8 | Privilege |
+| No sponsor/owner, single sponsor, orphaned ownership (G5, C14, C15, C16) | 5.1, 5.5 | Accountability |
+| High-privilege Graph app permissions (C18) | 3.3, 5.4 | Privilege |
+| allAllowed inheritable permissions (C21) | 3.3, 6.8 | Privilege, structural |
+| Client secret / expired / excessive / long-lived / nearing-expiry credential (G14a, P2, C17a–C17d) | 4.1 | Design and configuration |
+| No CA policy for agents / report-only / no high-risk block (C27) | 4.1, 6.7 | Design and configuration, behavioral |
+| Unclear name/description (G4) | 2.1, 5.5 | Accountability |
+| Dormant/stale agent or Topic, including usage-report adoption (G1, G14 via Topic hygiene, C5) | 5.3, 6.2 | Accountability |
+| Blocked package with pending request (G22) | 6.1 | None (CIS/CISA do not map a control to request-queue hygiene) |
+| Classic Copilot Studio SP not registered in Agent ID (G7) | 1.1, 2.1 | Accountability |
+| Cloud agent found by Defender but not in the Agent 365 registry (G19) | 1.1, 2.1, 2.3 | Accountability |
+| MCP server over plain HTTP (G20) | 3.10, 15.1 | Design and configuration |
+| MCP server on a non-Microsoft host (G21) | 2.5, 15.1 | Design and configuration, behavioral |
+| Maker (author) authentication on a connection (C6 / MT.1118) | 4.1 | Design and configuration |
+| No DLP policy covering a connector or environment (G8, G11) | 2.5, 15.1 | Design and configuration |
+
+## Items not yet independently verified (flagged, do before finalizing)
+
+- C19, C20, C23, C24, C26: titles confirmed directly from the
+  `Title =` attribute in source, but full trigger-condition bodies and `Control`
+  attributes were **not** re-read line-by-line this run (time-boxed to the
+  highest-ambiguity items: MT.1206, MT.1207, MT.1211, MT.1223, MT.1205, MT.1208,
+  MT.1118, which were fully verified this pass). Before publishing the final
+  matrix, read the remaining bodies the same way to confirm exact Severity/Control/
+  Skip behavior.
+- The Skills/MCP `elementType` taxonomy above is documentation-only; it needs a
+  live re-check once a tenant with an Agent 365 license is available.
+- G11, G17, G18: framework/API details flagged inline as unverified this run.
