@@ -5,8 +5,9 @@ function Test-MPAIGOV1002 {
     .DESCRIPTION
     A package the tenant has blocked (isBlocked) should have no live path to installation. A pending
     request against it (requestStatus/requestType) means a user can still be waiting on, or an admin
-    can still approve, an install the tenant already decided to block. NOT VALIDATED: requires an
-    Agent 365-licensed test tenant to confirm the live request-status field names and values.
+    can still approve, an install the tenant already decided to block. Reading this endpoint may
+    require a Microsoft Agent 365 license depending on tenant -- validated 2026-11-05 against an
+    F7-licensed test tenant where CopilotPackages.Read.All alone was sufficient.
     .EXAMPLE
     Test-MPAIGOV1002
     .LINK

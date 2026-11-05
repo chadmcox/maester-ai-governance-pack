@@ -4,8 +4,9 @@ function Test-MPAIGOV1006 {
     Finds agents with an empty or placeholder display name or description.
     .DESCRIPTION
     An agent with no description, or an obvious placeholder name (test, demo, copy, draft, untitled,
-    and similar), gives reviewers nothing to judge its purpose by. NOT VALIDATED: requires an Agent
-    365-licensed test tenant to confirm the live field names and typical placeholder values.
+    and similar), gives reviewers nothing to judge its purpose by. Reading this endpoint may require
+    a Microsoft Agent 365 license depending on tenant -- validated 2026-11-05 against an F7-licensed
+    test tenant where CopilotPackages.Read.All alone was sufficient.
     .EXAMPLE
     Test-MPAIGOV1006
     .LINK

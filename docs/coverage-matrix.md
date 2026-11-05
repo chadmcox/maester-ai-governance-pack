@@ -108,35 +108,35 @@ logic.
 
 ## Skills and MCP — surface redefinition (replaces the earlier Skills section)
 
-A direct `GET /v1.0/copilot/admin/catalog/packages?$expand=packageElementDetail`
-call against the test tenant returned `403 Forbidden` ("not authorized by the
-available scopes"). Cross-checked against Microsoft Learn: the Package Management
-API is GA at v1.0, needs `CopilotPackages.Read.All`, **and requires a Microsoft
-Agent 365 license** — the test tenant does not have one, so the 403 is a license
-gap, not a permission-consent gap. This directly confirms the Skip-without-license
-requirement for AIGOV.2/.3/.6 in the pilot.
+**Corrected 2026-11-05 with a live validation run** (see `phase0-notes.md`, surface 3). An
+earlier `GET /v1.0/copilot/admin/catalog/packages?$expand=packageElementDetail` call against the
+test tenant returned `403 Forbidden`. That 403 was a **consent gap, not a license gate**: once
+`CopilotPackages.Read.All` was properly consented, `GET /v1.0/copilot/admin/catalog/packages`
+succeeded against this (F7-licensed) tenant with no separate Agent 365 license observed — reading
+this endpoint may require a Microsoft Agent 365 license depending on tenant, but this tenant's
+403 was resolved by consent alone. There is also no `packageElementDetail` expand parameter (that
+400s); the real per-package detail call is `GET /v1.0/copilot/admin/catalog/packages/{id}`, which
+returns an `elementDetails` array.
 
-Without a live result, the documented schema is the best available evidence:
-- `copilotPackage.elementTypes` (String collection) — Learn's own example values are
-  `bot`, `declarativeAgent`.
-- `packageElementDetail.elementType` (String) — Learn's own example values are
-  `CustomEngineCopilot`, `DeclarativeAgent`, `Bot`.
-- Separately, Microsoft's "Build plugins for Copilot Cowork" packaging guide
-  describes a **manifest-level** `agentSkills` section (`SKILL.md` files) and an
-  `agentConnectors` section (MCP/remote-connector tool descriptions) as parts of a
-  Cowork plugin **package file**, not as documented `elementType` enum members.
+The confirmed live schema:
+- `copilotPackage.elementTypes` (String collection, list response) — confirmed real values in this
+  tenant include `AgentConnectors` (69 packages) and `MCPServers` (37 packages), not just
+  `Bot`/`DeclarativeAgent`/`CustomEngineCopilot`.
+- `elementDetails[].elements[].definition` (per-package detail, a JSON string) — for
+  `AgentConnectors`/`MCPServers` entries, contains `toolSource.remoteMcpServer.mcpServerUrl`,
+  `authorization.type`, and `mcpToolDescription.tools[]` (each tool: `name`, `description`,
+  `inputSchema`, `annotations.{readOnlyHint,destructiveHint,idempotentHint,openWorldHint}`).
+- Separately, Microsoft's "Build plugins for Copilot Cowork" packaging guide describes a
+  **manifest-level** `agentSkills` section (`SKILL.md` files) as part of a Cowork plugin package
+  file; this is confirmed as a real `elementTypes` value (seen live) but is a distinct concept from
+  MCP/connector tools.
 
-**Conclusion:** "Skills" (Markdown `SKILL.md` packages) and MCP/Tools connectors are
-real, distinct Cowork-plugin manifest concepts, but there is no published or
-tenant-confirmed evidence that the Package Management API's `elementType` enum
-actually surfaces `agentSkills`/`agentConnectors` as queryable values — the
-documented enum only shows `Bot`/`DeclarativeAgent`/`CustomEngineCopilot`. Any
-Skills- or MCP-surface finding built on `packageElementDetail` is **not
-independently testable with current evidence** and must stay out of scope until
-confirmed live against a tenant with an Agent 365 license (flagged as an open
-question). This also means G12–G14 (relabeled Topic hygiene above) are the only
-currently-evidenced findings for the "Topics" side of this surface; true
-`SKILL.md`-level findings have no confirmed data source yet.
+**Conclusion:** MCP server URL/host and tool-review findings against `AgentConnectors`/
+`MCPServers` are a real, queryable, Graph-only data source — **testable via Graph alone, confirmed
+live**, not Defender-dependent. This also means G12–G14 (relabeled Topic hygiene above) are the
+only currently-evidenced findings for the Copilot Studio "Topics" side of this surface; true
+`SKILL.md`-level findings against `agentSkills` are confirmed to exist as a value but have not yet
+had a finding built and validated against them.
 
 ## CIS Controls v8.1 and CISA agentic-AI risk category mapping (Supporting alignment)
 
@@ -177,6 +177,6 @@ stays, already cited per-row above where Maester ships a Control.
   MT.1118, which were fully verified this pass). Before publishing the final
   matrix, read the remaining bodies the same way to confirm exact Severity/Control/
   Skip behavior.
-- The Skills/MCP `elementType` taxonomy above is documentation-only; it needs a
-  live re-check once a tenant with an Agent 365 license is available.
+- The Skills/MCP `elementType` taxonomy above is confirmed live against the test
+  tenant (2026-11-05); see `phase0-notes.md` surface 3 for the full schema.
 - G11, G17, G18: framework/API details flagged inline as unverified this run.

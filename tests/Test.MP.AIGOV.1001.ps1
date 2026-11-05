@@ -6,10 +6,11 @@ function Test-MPAIGOV1001 {
     Reads the Microsoft 365 Copilot usage report for the fixed D90 report period and compares the
     share of reported users with agent activity against a configurable threshold (default 5%). Only
     runs when the package catalog reports at least one agent -- so this also depends on the Package
-    Management API (and therefore an Agent 365 license), not just the usage report. Skips when fewer
-    than 20 users are reported (too small a sample) and when the undocumented agent-activity column
-    cannot be found by name. NOT VALIDATED: requires an Agent 365-licensed test tenant to confirm the
-    live report column names and the package catalog agent count.
+    Management API (which may require an Agent 365 license depending on tenant), not just the usage
+    report. Skips when fewer than 20 users are reported (too small a sample) and when the undocumented
+    agent-activity column cannot be found by name. The adoption-threshold comparison itself has not
+    been exercised against a tenant with at least one catalog agent; re-validate that branch once one
+    is available.
     .EXAMPLE
     Test-MPAIGOV1001
     .EXAMPLE

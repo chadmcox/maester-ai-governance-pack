@@ -7,8 +7,9 @@ function Test-MPAIGOV1003 {
     per-package detail call, GET /copilot/admin/catalog/packages/{id} -- the list call does not
     return them, so every package in the catalog needs its own detail request. Flags entries where
     resourceType eq 'user': a direct user assignment has no group to audit membership through and no
-    single place to see who has access. NOT VALIDATED: requires an Agent 365-licensed test tenant to
-    confirm the live field names on the detail response.
+    single place to see who has access. Reading this endpoint may require a Microsoft Agent 365
+    license depending on tenant -- validated 2026-11-05 against an F7-licensed test tenant where
+    CopilotPackages.Read.All alone was sufficient.
     .EXAMPLE
     Test-MPAIGOV1003
     .LINK
