@@ -1,8 +1,10 @@
-> [!WARNING]
-> **NOT VALIDATED.** This test depends on the Copilot package catalog (Microsoft Agent 365 license)
-> in addition to the usage report. It has not been run end to end against an Agent 365-licensed test
-> tenant. Confirm the package catalog's `elementTypes` values and the usage report's agent-activity
-> column name before relying on the result.
+> [!NOTE]
+> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
+> catalog API was reachable with `CopilotPackages.Read.All` alone — no separate Agent 365 license
+> was required to reach it in this tenant). The run correctly **Skipped** with
+> "the package catalog reports no agents, so adoption has nothing to measure" because this tenant's
+> catalog had zero agents. The adoption-threshold comparison itself was not exercised; re-validate
+> that branch once a tenant with at least one agent and usage data is available.
 
 Checks whether Microsoft 365 Copilot agent catalog adoption is at or above a configurable threshold
 (default 5%) over the fixed D90 report period. Only runs when the package catalog reports at least

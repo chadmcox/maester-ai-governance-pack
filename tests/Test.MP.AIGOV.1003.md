@@ -1,8 +1,10 @@
-> [!WARNING]
-> **NOT VALIDATED.** This test depends on the Copilot package catalog (Microsoft Agent 365 license),
-> specifically the per-package detail call. It has not been run end to end against an Agent
-> 365-licensed test tenant. Confirm the live `allowedUsersAndGroups`/`acquireUsersAndGroups` field
-> names and `resourceType` values on the package detail response before relying on the result.
+> [!NOTE]
+> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
+> catalog API was reachable with `CopilotPackages.Read.All` alone). The run correctly **Failed**
+> (true positive), finding 1 real package ("Copilot Code") with a directly assigned user. The
+> per-package detail call's `allowedUsersAndGroups`/`acquireUsersAndGroups` field names and
+> `resourceType` values matched the live schema. This test is slow (iterates every package's detail
+> individually) — expect several minutes against a catalog with hundreds of packages.
 
 Checks whether an agent is assigned directly to individual users instead of through a group. The
 audience collections (`allowedUsersAndGroups`, `acquireUsersAndGroups`) are only returned by the

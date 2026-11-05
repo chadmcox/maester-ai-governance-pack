@@ -1,7 +1,8 @@
-> [!WARNING]
-> **NOT VALIDATED.** This test depends on the Copilot package catalog (Microsoft Agent 365 license).
-> It has not been run end to end against an Agent 365-licensed test tenant. Confirm the live
-> `requestStatus`/`requestType` field names and values before relying on the result.
+> [!NOTE]
+> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
+> catalog API was reachable with `CopilotPackages.Read.All` alone). The run correctly **Passed**:
+> no blocked package had an open pending install or consent request. The `requestStatus`/
+> `requestType` field names matched the live schema.
 
 Checks whether a package the tenant has blocked (`isBlocked`) still has an open pending install or
 consent request (`requestStatus`/`requestType`). A pending request against a blocked package means a

@@ -33,7 +33,7 @@ function Test-MPAIGOV1006 {
 
     try {
         Write-Verbose 'Reading the Copilot package catalog for empty or placeholder names and descriptions.'
-        $Packages = @(Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' -Select @('id', 'displayName', 'description'))
+        $Packages = @(Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' -Select @('id', 'displayName', 'shortDescription', 'longDescription'))
     } catch {
         $ErrorRecord = $_
     }
@@ -51,7 +51,8 @@ function Test-MPAIGOV1006 {
     $Unclear = [System.Collections.Generic.List[pscustomobject]]::new()
     foreach ($Package in $Packages) {
         $DisplayName = [string]$Package.displayName
-        $Description = [string]$Package.description
+        $ShortDescription = [string]$Package.shortDescription
+        $LongDescription = [string]$Package.longDescription
         $Reasons = [System.Collections.Generic.List[string]]::new()
 
         if ([string]::IsNullOrWhiteSpace($DisplayName)) {
@@ -59,7 +60,7 @@ function Test-MPAIGOV1006 {
         } elseif ($NamePattern -and ($DisplayName -match "(?i)($NamePattern)")) {
             $Reasons.Add('Display name looks like a placeholder.')
         }
-        if ([string]::IsNullOrWhiteSpace($Description)) {
+        if ([string]::IsNullOrWhiteSpace($ShortDescription) -and [string]::IsNullOrWhiteSpace($LongDescription)) {
             $Reasons.Add('Empty description.')
         }
 

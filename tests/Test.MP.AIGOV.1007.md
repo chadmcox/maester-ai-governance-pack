@@ -1,8 +1,10 @@
-> [!WARNING]
-> **NOT VALIDATED.** This test depends on the Copilot package catalog (Microsoft Agent 365 license).
-> It has not been run end to end against an Agent 365-licensed test tenant. Confirm the live
-> `publisher`, `availableTo`, and `deployedTo` field names and values — and the full set of real
-> publisher strings in use — before relying on the result.
+> [!NOTE]
+> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
+> catalog API was reachable with `CopilotPackages.Read.All` alone). The run correctly **Failed**
+> (true positive), finding 368 real custom/external packages available or deployed tenant-wide
+> (for example "Lexis® Create DMS for Copilot", "Creately", "Dropbox"). The `publisher`,
+> `availableTo`, and `deployedTo` field names and values matched the live schema; no additional
+> Microsoft-publisher strings beyond the documented allowlist were observed in this tenant's data.
 
 Checks whether a custom or external (non-Microsoft-published) package is available or deployed
 tenant-wide (`availableTo` indicating `allowedForAll`, or `deployedTo` indicating `acquiredForAll`).

@@ -1,8 +1,10 @@
-> [!WARNING]
-> **NOT VALIDATED.** This test depends on the Copilot package catalog (Microsoft Agent 365 license).
-> It has not been run end to end against an Agent 365-licensed test tenant. Confirm the live
-> `displayName`/`description` field names and real-world placeholder patterns before relying on the
-> result.
+> [!NOTE]
+> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
+> catalog API was reachable with `CopilotPackages.Read.All` alone). The initial run against the live
+> schema **errored**: `description` is not a valid property on `microsoft.graph.copilotPackageDetail`
+> (Graph returned HTTP 400). The real fields are `shortDescription` and `longDescription`. The test
+> was fixed to select and check both fields (empty counts only if both are blank), then re-run and
+> correctly **Failed** (true positive), finding 3 real packages with an empty description.
 
 Checks whether an agent's display name or description is empty, or whether the display name matches
 a placeholder pattern (test, demo, copy, draft, untitled, and similar). Without a clear name and
