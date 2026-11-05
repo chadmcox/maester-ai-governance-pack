@@ -1,0 +1,31 @@
+{
+  "$schema": "https://maester.dev/schemas/maester-pack-1.0.json",
+  "Id": "chadmcox.ai-governance",
+  "Guid": "312805e3-4f72-45c0-ba29-7e13582f1cca",
+  "Name": "AI Governance",
+  "Description": "Findings for how AI agents, agent identities, and the Copilot agent catalog are governed in Microsoft 365: sponsor/owner coverage, classic Copilot Studio service principals without an Agent ID, catalog adoption, blocked-package requests, direct user assignment, and tenant-wide custom package deployment.",
+  "Version": "0.1.0",
+  "Publisher": "chadmcox",
+  "License": "MIT",
+  "RequiresMaester": ">=3.0",
+  "Code": "AIGOV",
+  "Suites": [
+    "tests"
+  ],
+  "Helpers": [
+    "helpers"
+  ],
+  "Uses": {
+    "Services": [
+      "Graph"
+    ],
+    "GraphScopes": [
+      "Application.Read.All",
+      "Directory.Read.All",
+      "Reports.Read.All",
+      "CopilotPackages.Read.All"
+    ],
+    "Network": [],
+    "Modules": []
+  }
+}
