@@ -1,0 +1,46 @@
+name: Test pack
+
+# Validates this pack's structure and test metadata on every PR, using Test-MtPack.
+#
+# PROVISIONAL: Test-MtPack, New-MtPack and the rest of the Maester Packs tooling are not in a
+# published Maester release yet (as of maester365/maester@main, Maester 3.0 is unreleased).
+# Until Maester 3.0 ships to the PowerShell Gallery, this workflow builds Maester straight from
+# its main branch instead of `Install-Module Maester`. Switch this step to
+# `Install-Module Maester -RequiredVersion <pinned 3.x>` once that version is published, and
+# remove the main-branch checkout.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this pack
+        uses: actions/checkout@v4
+        with:
+          path: pack
+
+      - name: Checkout Maester main (provisional: Packs tooling is unreleased)
+        uses: actions/checkout@v4
+        with:
+          repository: maester365/maester
+          ref: main
+          path: maester-src
+
+      - name: Validate the pack with Test-MtPack
+        shell: pwsh
+        run: |
+          Import-Module "$env:GITHUB_WORKSPACE/maester-src/powershell/Maester.psd1" -Force
+          $result = Test-MtPack -Path "$env:GITHUB_WORKSPACE/pack"
+          $result | Format-List
+          if (-not $result.IsValid) {
+            Write-Error "Pack validation failed: $($result.Errors | ConvertTo-Json -Depth 5)"
+            exit 1
+          }

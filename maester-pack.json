@@ -1,0 +1,26 @@
+{
+  "$schema": "https://maester.dev/schemas/maester-pack-1.0.json",
+  "Id": "chadmcox.ai-governance",
+  "Guid": "312805e3-4f72-45c0-ba29-7e13582f1cca",
+  "Name": "AI Governance",
+  "Description": "Checks for AI Governance.",
+  "Version": "0.1.0",
+  "Publisher": "chadmcox",
+  "License": "MIT",
+  "RequiresMaester": ">=3.0",
+  "Code": "AIGOV",
+  "Suites": [
+    "tests"
+  ],
+  "Helpers": [
+    "helpers"
+  ],
+  "Uses": {
+    "Services": [
+      "Graph"
+    ],
+    "GraphScopes": [],
+    "Network": [],
+    "Modules": []
+  }
+}
