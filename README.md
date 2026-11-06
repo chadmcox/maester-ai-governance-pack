@@ -22,6 +22,9 @@ Install-MtPack chadmcox/maester-ai-governance-pack
 | MP.AIGOV.1010 | MCP server should be hosted on an allowlisted domain | Preview | Validated, Graph only |
 | MP.AIGOV.1011 | MCP tool with a destructive or open-world effect should not be in a tenant-wide package | Preview | Validated, Graph only |
 | MP.AIGOV.1012 | Agent skill should have a clear description, and should not be exposed to Copilot tenant-wide without review | Preview | Validated, Graph only |
+| MP.AIGOV.1013 | Enabled spending policy should have a credit ceiling | Preview | Validated, Graph only |
+| MP.AIGOV.1014 | Group backing a spending policy should have owners and a description | Preview | Validated, Graph only |
+| MP.AIGOV.1015 | Group should not be assigned to more than one enabled spending policy | Preview | Validated, Graph only |
 
 See [`docs/pilot-and-open-questions.md`](docs/pilot-and-open-questions.md) for the full data-source
 and skip-condition rationale behind each test, and [`docs/coverage-matrix.md`](docs/coverage-matrix.md)
