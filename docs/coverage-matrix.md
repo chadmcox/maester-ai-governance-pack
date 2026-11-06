@@ -30,6 +30,9 @@ mapping types: **Direct** = Direct requirement, **Support** = Supporting alignme
 | G19 | Agents | Cloud agent discovered by Defender but absent from the Agent 365 registry | Defender XDR Advanced Hunting/App Governance surfaces an agent/app identity with no matching `microsoft.graph.agentIdentity` object | Defender Advanced Hunting (KQL) + Graph v1.0 `servicePrincipals/microsoft.graph.agentIdentity` cross-reference | none | Gap | Medium | Unmapped | — | **Defender-dependent, explicitly outside the Graph-only pilot.** Distinct from G7: G7 is the classic-Copilot-Studio-SP-tag-based state ("not registered in Agent ID"); this is Defender's independent discovery signal catching agents/apps outside both the classic-SP-tag detection and the Agent ID registry entirely. Needs MDA App Governance/MDI, same dependency class as MT.1077-1079. |
 | G20 | Tools/MCP | MCP server endpoint reachable over plain `http://` instead of `https://` | Discovered MCP server URL scheme is `http` | Graph v1.0 `copilot/admin/catalog/packages` + per-package `elementDetails[].elements[].definition` JSON (`toolSource.remoteMcpServer.mcpServerUrl`), `CopilotPackages.Read.All` — **corrected this revision: confirmed live as Graph-only, not Defender-dependent** | none — MT.1120 is a different check (reviews whether MCP **tools** have been reviewed/approved, via Dataverse agent-tool metadata; it does not inspect the MCP server's URL scheme) | Gap | High | Unmapped | — | **Built and live-validated as `MP.AIGOV.1008`.** Not the same finding as C8/MT.1120 — MT.1120 is tool-review hygiene, not transport-security inspection of the MCP endpoint itself. Live run against the test tenant: 37/37 MCP packages were `https://`, zero findings (true negative). |
 | G22 | Agents | Blocked package with an open pending request | Package status = Blocked AND a pending install/consent request exists | Graph v1.0 `copilot/admin/catalog/packages` (`isBlocked` + `requestStatus`/`requestType` filters; confirmed both properties exist, license-gated) | none — MT.1118 does not apply here (it is the maker-auth connection check, not a package-request-status check) | Gap | Low | Org | — | **Reclassified from Partial.** No Maester test reads package *request* status at all; this is the `chadmcox/Copilot` "blocked + pending" finding, confirmed as a real, distinct Graph v1.0 object (the Package Management API's `requestStatus`/`requestType` filters, GA since the referenced "August 2026" what's-new entry). This is pilot item `MP.AIGOV.1002`. |
+| G21b | Tools/MCP | MCP server hosted on a domain outside a configurable allowlist | Discovered `mcpServerUrl` host does not match any entry in `-AllowedHosts` (default Microsoft domain suffixes only) | Graph v1.0 `copilot/admin/catalog/packages` + per-package `elementDetails` (same `mcpServerUrl` field as G20) | none | Gap | Medium | nist-800-53-r5:SA-9 | Support | **Built and live-validated as `MP.AIGOV.1010`.** Distinct design from the dropped G21: rather than a static, non-tunable "non-Microsoft host" signal that would flag all 37 MCP packages in this tenant with zero differentiation, `.1010` takes a configurable allowlist so an admin curates it as vendors are reviewed — after which only genuinely new/unreviewed hosts surface. Live run: 37/37 packages flagged non-allowlisted under the (intentionally empty-of-vendors) default allowlist — expected true positive, not a design flaw. |
+| G23 | Tools/MCP | MCP tool with a destructive or open-world effect inside a tenant-wide package | Package `elementTypes` contains `MCPServers`/`AgentConnectors`, package is tenant-wide (`availableTo=allowedForAll` or `deployedTo=acquiredForAll`, same signal as G2a/`.1007`), AND any tool's `annotations.destructiveHint` or `.openWorldHint` is `true` | Graph v1.0 `copilot/admin/catalog/packages` + per-package `elementDetails[].elements[].definition` (`toolSource.remoteMcpServer.mcpToolDescription.tools[].annotations`) | none | Gap | High | nist-800-53-r5:AC-6 | Support | **Built and live-validated as `MP.AIGOV.1011`.** Live run found `openWorldHint: true` tools in "Moody's Credit MCP", a tenant-wide package — true positive. Combines the tenant-wide signal (`.1007`/G2a) with the tool-annotation schema confirmed live this round. |
+| G24 | Skills | Agent skill has a weak/empty frontmatter description, or is exposed to Copilot inside a tenant-wide package | Package `elementTypes` contains `AgentSkills`; per-skill `frontmatter.description` length < a configurable `-MinDescriptionLength` (default 40), OR `expose_skill_to_copilot=true` AND the package is tenant-wide (same signal as G2a/G23) | Graph v1.0 `copilot/admin/catalog/packages` + per-package `elementDetails[].elements[].definition` (`expose_skill_to_copilot`, `frontmatter.{name,description}`) | none | Gap | Medium | nist-800-53-r5:CM-7 | Support | **Built and live-validated as `MP.AIGOV.1012`.** First finding built against the `AgentSkills`/`SKILL.md` surface described in "Skills and MCP" below. Live run: 32 packages carry an agent-skill element; confirmed true positive against real data. |
 
 ## PARTIAL — an existing test touches the surface but not the exact condition
 
@@ -53,13 +56,16 @@ directory roles). The stray MT.1181 cross-reference under the old G11 note has a
 been removed — MT.1181 is Conditional Access, not DLP, and is not an adjacent test
 for that finding.
 
-**G21 dropped this round (MCP server on a non-Microsoft host):** investigated
-against the live test tenant and found fundamentally flawed, not merely
-unbuilt — 37/37 MCP connectors in the catalog are hosted on non-Microsoft SaaS
-domains (Tavily, Asana, Xero, FactSet, etc.). That is inherent to using
-third-party MCP tooling, not an anomaly, so the condition produces zero
+**G21 dropped, then rebuilt as G21b with a different design:** the original static
+"non-Microsoft host" signal was investigated against the live test tenant and found
+fundamentally flawed — 37/37 MCP connectors in the catalog are hosted on
+non-Microsoft SaaS domains (Tavily, Asana, Xero, FactSet, etc.). That is inherent to
+using third-party MCP tooling, not an anomaly, so a static version produces zero
 differentiating signal and fully overlaps with `.1007`'s existing custom/external
-classification. Removed rather than kept as an unbuilt Gap row.
+classification. **G21b** replaces it with a configurable allowlist (`-AllowedHosts`,
+default Microsoft-only) so an admin curates approved vendors over time, after which
+only genuinely new/unreviewed hosts surface — built and live-validated as
+`MP.AIGOV.1010`.
 
 ## COVERED — an existing Maester test already implements this exact finding
 
@@ -141,9 +147,13 @@ The confirmed live schema:
 **Conclusion:** MCP server URL/host and tool-review findings against `AgentConnectors`/
 `MCPServers` are a real, queryable, Graph-only data source — **testable via Graph alone, confirmed
 live**, not Defender-dependent. This also means G12–G14 (relabeled Topic hygiene above) are the
-only currently-evidenced findings for the Copilot Studio "Topics" side of this surface; true
-`SKILL.md`-level findings against `agentSkills` are confirmed to exist as a value but have not yet
-had a finding built and validated against them.
+only currently-evidenced findings for the Copilot Studio "Topics" side of this surface.
+
+**Updated 2026-11-06:** all three identified findings against this surface are now built and
+live-validated: MCP host allowlist (G21b, `MP.AIGOV.1010`), destructive/open-world MCP tool in a
+tenant-wide package (G23, `MP.AIGOV.1011`), and weak-description/unreviewed-exposure `AgentSkills`
+(G24, `MP.AIGOV.1012`) — the first finding built against the `SKILL.md`-level `agentSkills` value
+confirmed to exist in this tenant's catalog.
 
 ## CIS Controls v8.1 and CISA agentic-AI risk category mapping (Supporting alignment)
 
@@ -171,6 +181,9 @@ stays, already cited per-row above where Maester ships a Control.
 | Classic Copilot Studio SP not registered in Agent ID (G7) | 1.1, 2.1 | Accountability |
 | Cloud agent found by Defender but not in the Agent 365 registry (G19) | 1.1, 2.1, 2.3 | Accountability |
 | MCP server over plain HTTP (G20, built as `MP.AIGOV.1008`) | 3.10, 15.1 | Design and configuration |
+| MCP server on a non-allowlisted host (G21b, built as `MP.AIGOV.1010`) | 15.1, 15.2 | Design and configuration |
+| Destructive/open-world MCP tool in a tenant-wide package (G23, built as `MP.AIGOV.1011`) | 3.3, 6.8 | Privilege |
+| Weak-description or unreviewed tenant-wide agent skill (G24, built as `MP.AIGOV.1012`) | 4.1, 6.8 | Design and configuration |
 | Maker (author) authentication on a connection (C6 / MT.1118) | 4.1 | Design and configuration |
 | No DLP policy covering a connector or environment (G8, G11) | 2.5, 15.1 | Design and configuration |
 

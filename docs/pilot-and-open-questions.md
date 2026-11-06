@@ -93,6 +93,27 @@ written (four Covered rows for MT.1208, zero-sponsor-only scope for MT.1205).
 > per-topic `data` blob. All three are deferred until a live Dataverse
 > connection can validate the design — not built this round.
 
+> **Update — Skills/MCP batch two, three more built and live-validated:** after the
+> PR #6 review fixes (`.1008`/`.1009` redaction, failure counting, keyCredentials,
+> Control attribute), the schema was extended to cover tool annotations and agent
+> skills, both confirmed live against the same F7-licensed test tenant:
+> - `MP.AIGOV.1010` — G21b, MCP server host not on a configurable `-AllowedHosts`
+>   allowlist (default Microsoft domains only). Replaces the earlier dropped G21
+>   with a tunable design: 37/37 packages flag today against the unreviewed
+>   default allowlist, but an admin can curate it as vendors are approved so only
+>   genuinely new hosts surface going forward.
+> - `MP.AIGOV.1011` — G23, MCP tool with `destructiveHint`/`openWorldHint` inside
+>   a tenant-wide package (`availableTo`/`deployedTo`, same signal as `.1007`).
+>   Live run found `openWorldHint: true` tools in "Moody's Credit MCP", a
+>   tenant-wide package — true positive.
+> - `MP.AIGOV.1012` — G24, agent skill with a weak/empty `frontmatter.description`
+>   (configurable `-MinDescriptionLength`, default 40) or `expose_skill_to_copilot`
+>   tenant-wide. First finding built against the `AgentSkills`/`SKILL.md` value
+>   confirmed to exist in this tenant's catalog (32 packages).
+>
+> All three executed live via `Invoke-Maester` (not just manual Graph queries) and
+> Failed as expected (true positives) against the test tenant.
+
 **Optional, not required for Phase 2 to start:** draft an upstream issue against
 `maester365/maester` for the declared-vs-shipped severity mismatch found in both
 `Test.MT.1118.ps1` (declared `Medium`, emits `Severity 'High'`) and
