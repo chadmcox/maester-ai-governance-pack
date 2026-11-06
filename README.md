@@ -3,8 +3,13 @@
 A [Maester Pack](https://maester.dev/docs/packs). Install it with:
 
 ```powershell
-Install-MtPack chadmcox/maester-ai-governance-pack
+Install-MtPack chadmcox/maester-ai-governance-pack/pack
 ```
+
+The installable pack lives in [`pack/`](pack/) (`maester-pack.json`, `tests/`, `helpers/`), not the
+repo root. [`unit-tests/`](unit-tests/) holds this repo's own Pester unit tests and is not part of
+the installed pack -- see the comment in
+[`.github/workflows/test-pack.yml`](.github/workflows/test-pack.yml) for why.
 
 ## Tests
 
