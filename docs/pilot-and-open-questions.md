@@ -66,6 +66,33 @@ surface redefinition" section).
 The MT.1205/MT.1208 granular split stays in the matrix exactly as currently
 written (four Covered rows for MT.1208, zero-sponsor-only scope for MT.1205).
 
+> **Update — MCP built, Topic hygiene held:** the `elementType`/package-API
+> schema was live-confirmed against the F7-licensed test tenant (`AgentConnectors`/
+> `MCPServers` elementTypes, per-package `elementDetails[].elements[].definition`
+> JSON holding `toolSource.remoteMcpServer.mcpServerUrl`). This unblocked two
+> findings, both built and live-validated this round:
+> - `MP.AIGOV.1008` — G20, MCP server endpoint reachable over plain `http://`.
+>   Graph-only (`CopilotPackages.Read.All`), not Defender-dependent as the
+>   matrix originally assumed. 37/37 live MCP packages were `https://`.
+> - `MP.AIGOV.1009` — G14a, blueprint client secret nearing expiration (a
+>   configurable `WarningDays` warning window, default 30, explicitly excluding
+>   already-expired secrets since that's MT.1208's job).
+>
+> G21 (MCP server on a non-Microsoft host) was investigated and **dropped**:
+> live data showed 37/37 MCP connectors in the test tenant are on non-Microsoft
+> SaaS hosts, which is inherent to using third-party tools, not an anomaly, and
+> fully overlaps with `.1007`'s custom/external classification — no
+> differentiating signal.
+>
+> G12–G14 (Topic hygiene via Dataverse) remain **held**: `botcomponent`'s
+> schema was confirmed from Microsoft Learn docs alone (`componenttype=9` is
+> "Topic (V2)", `createdon`/`modifiedon`/`data` are real fields), but live
+> Dataverse access to this test tenant requires an interactive Azure sign-in
+> that isn't available in this environment, and G13 (topic scope boundary)
+> additionally depends on an undocumented JSON property inside the opaque
+> per-topic `data` blob. All three are deferred until a live Dataverse
+> connection can validate the design — not built this round.
+
 **Optional, not required for Phase 2 to start:** draft an upstream issue against
 `maester365/maester` for the declared-vs-shipped severity mismatch found in both
 `Test.MT.1118.ps1` (declared `Medium`, emits `Severity 'High'`) and
