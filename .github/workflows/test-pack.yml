@@ -60,7 +60,9 @@ jobs:
         run: |
           Install-Module Pester -RequiredVersion 6.2.0 -Force -SkipPublisherCheck -Scope CurrentUser
           Import-Module Pester -RequiredVersion 6.2.0 -Force
-          $env:MAESTER_MODULE_PATH = "$env:GITHUB_WORKSPACE/maester-src/powershell/Maester.psd1"
+          # The [MaesterTest(...)] attribute used on every pack test function requires the Maester
+          # module type to be loaded before Pester dot-sources any pack/tests/*.ps1 file.
+          Import-Module "$env:GITHUB_WORKSPACE/maester-src/powershell/Maester.psd1" -Force
           $config = New-PesterConfiguration
           $config.Run.Path = "$env:GITHUB_WORKSPACE/repo/unit-tests"
           $config.Run.PassThru = $true

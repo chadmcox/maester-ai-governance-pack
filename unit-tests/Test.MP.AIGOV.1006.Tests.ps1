@@ -8,16 +8,14 @@
 #   - `Test-MtPack ./pack` only scans the installable pack content.
 #   - `Invoke-Pester ./unit-tests` still runs these tests in CI and locally.
 #
+# The [MaesterTest(...)] attribute used by every pack test function requires the Maester module
+# type to be loaded before Pester dot-sources a pack/tests/*.ps1 file -- import it (Import-Module
+# <path>\Maester.psd1 -Force) in the calling shell before Invoke-Pester, as test-pack.yml does.
+#
 # This file is a minimal proof of the dot-source + Mock pattern against the new pack/ layout.
 # The full PR A (.1016-.1019) unit-test suite lands here when that branch rebases onto this one.
 
 BeforeAll {
-    $MaesterModulePath = $env:MAESTER_MODULE_PATH
-    if (-not $MaesterModulePath) {
-        throw 'MAESTER_MODULE_PATH must point at a local Maester.psd1 (needed for the [MaesterTest()] attribute type).'
-    }
-    Import-Module $MaesterModulePath -Force
-
     . "$PSScriptRoot/../pack/helpers/Get-AIGovPackageCatalogSkipMessage.ps1"
     . "$PSScriptRoot/../pack/tests/Test.MP.AIGOV.1006.ps1"
 }

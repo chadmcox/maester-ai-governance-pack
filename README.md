@@ -30,6 +30,10 @@ the installed pack -- see the comment in
 | MP.AIGOV.1013 | Enabled spending policy should have a credit ceiling | Preview | Validated, Graph only |
 | MP.AIGOV.1014 | Group backing a spending policy should have owners and a description | Preview | Validated, Graph only |
 | MP.AIGOV.1015 | Group should not be assigned to more than one enabled spending policy | Preview | Validated, Graph only |
+| MP.AIGOV.1016 | MCP server should not use weak or no authentication | Preview | Validated, Graph only |
+| MP.AIGOV.1017 | Conditional Access should cover agent identities | Preview | Validated, Graph only |
+| MP.AIGOV.1018 | Agent identity currently at risk should be remediated or dismissed | Preview | Validated, Graph only |
+| MP.AIGOV.1019 | Agent identity should not have user-consented delegated permissions | Preview | Validated, Graph only |
 
 See [`docs/pilot-and-open-questions.md`](docs/pilot-and-open-questions.md) for the full data-source
 and skip-condition rationale behind each test, and [`docs/coverage-matrix.md`](docs/coverage-matrix.md)
