@@ -6,11 +6,19 @@ by comparing the beta and v1.0 schema reference pages). A policy "targets agent 
 `conditions.clientApplications.agentIdServicePrincipalFilter.rule` is set, or its
 `conditions.agentIdRiskLevels` is non-empty.
 
-Reports two independent gaps in one result table:
+Reports three independent outcomes:
 
-- No *enabled* policy targets agent identities at all.
-- Agent-targeting policies exist, but every one has `state` `disabled` or
-  `enabledForReportingButNotEnforced` (report-only), so none is actually enforced.
+- **Full pass**: at least one enabled policy targets agent identities dynamically, via
+  `agentIdServicePrincipalFilter` or `agentIdRiskLevels`, so current and future agent identities are
+  automatically covered.
+- **Partial coverage (Medium)**: enabled policies target agent identities, but only by a static
+  `includeAgentIdServicePrincipals` ID list — no filter or risk condition. There is no "All"
+  sentinel value for this property (confirmed against the `conditionalAccessClientApplications` beta
+  schema reference), so a newly created agent identity is not automatically covered until an admin
+  adds its ID to the policy.
+- **No coverage (High)**: either no policy targets agent identities at all, or agent-targeting
+  policies exist but every one has `state` `disabled` or `enabledForReportingButNotEnforced`
+  (report-only), so none is actually enforced.
 
 This intentionally does not duplicate `MT.1181` ("Conditional Access policy is present that blocks
 high agent risk sign-ins"), confirmed by reading its source
@@ -33,9 +41,10 @@ outside `MT.1181`'s narrower scope.
 
 #### Remediation action
 
-Create at least one enabled Conditional Access policy that targets agent identities (via
-`includeAgentIdServicePrincipals`, `agentIdServicePrincipalFilter`, or an agent risk condition), or
-move an existing report-only agent-targeting policy to enabled once validated.
+Create at least one enabled Conditional Access policy that targets agent identities dynamically
+(via `agentIdServicePrincipalFilter` or an agent risk condition), rather than relying solely on a
+static `includeAgentIdServicePrincipals` ID list, and move any existing report-only agent-targeting
+policy to enabled once validated.
 
 #### Related links
 

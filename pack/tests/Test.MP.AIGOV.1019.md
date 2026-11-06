@@ -21,6 +21,16 @@ instead of a separate guess at what counts as high risk. That hashtable isn't ex
 module, so it is reproduced here verbatim with this citation; keep it in sync if `MT.1223`'s source
 changes.
 
+A Pester unit test (`unit-tests/Test.MP.AIGOV.1019.Tests.ps1`) pins a SHA-256 hash of the
+`$HighRiskScopes` array literal as a drift tripwire: if a future edit changes that array without a
+matching update to the pinned hash and the commit SHA cited above, the unit test fails rather than
+silently drifting from Maester's current classification.
+
+An agent identity whose per-agent grant read fails (not a 403 on the initial list call, but a
+failure reading grants for one specific agent) is counted and excluded from the result rather than
+silently dropped or failing the whole test — the count is reported alongside a Pass or Fail outcome
+so a partial-evaluation result is never mistaken for a clean Pass.
+
 > [!NOTE]
 > **Validated** 2026-11-06 against a real Microsoft 365 test tenant (F7-licensed). The run
 > correctly **Passed** (true negative): 11 agent identities were checked and none had a

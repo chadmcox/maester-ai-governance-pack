@@ -16,6 +16,13 @@ function Test-MPAIGOV1017 {
     Two independent gap conditions, reported in one result table: (a) no *enabled* policy targets
     agent identities at all; (b) agent-targeting policies exist, but every one of them has state
     'disabled' or 'enabledForReportingButNotEnforced' (report-only), so none is actually enforced.
+    A third, narrower outcome is Partial coverage: at least one enabled policy targets agent
+    identities, but only via a static includeAgentIdServicePrincipals ID list -- there is no "All"
+    sentinel value for this property (confirmed against the conditionalAccessClientApplications
+    beta schema reference), so a policy built this way does not automatically cover an agent
+    identity created after the policy was last updated. A policy using
+    agentIdServicePrincipalFilter or agentIdRiskLevels covers agent identities dynamically and
+    drives a full pass regardless of any other static-only policies also present.
 
     This intentionally does not duplicate MT.1181 (Maester's own "Conditional Access policy is
     present that blocks high agent risk sign-ins"), confirmed by reading its source
@@ -84,20 +91,52 @@ function Test-MPAIGOV1017 {
         if (-not ($IncludesAgentIds -or $HasAgentIdFilter -or $HasAgentRiskCondition)) { continue }
 
         $AgentTargeting.Add([pscustomobject]@{
-            PolicyId    = [string]$Policy.id
-            DisplayName = [string]$Policy.displayName
-            State       = [string]$Policy.state
-            IsEnabled   = ([string]$Policy.state -eq 'enabled')
+            PolicyId        = [string]$Policy.id
+            DisplayName     = [string]$Policy.displayName
+            State           = [string]$Policy.state
+            IsEnabled       = ([string]$Policy.state -eq 'enabled')
+            # A filter or risk condition applies dynamically to any current or future matching
+            # agent identity. A policy that only enumerates includeAgentIdServicePrincipals by ID
+            # covers nothing it wasn't explicitly updated to include -- that's partial coverage,
+            # not full coverage, even though it does target agent identities.
+            IsDynamic       = ($HasAgentIdFilter -or $HasAgentRiskCondition)
+            IncludedIdCount = @($ClientApps.includeAgentIdServicePrincipals).Count
         })
     }
 
     $EnabledAgentTargeting = @($AgentTargeting | Where-Object { $_.IsEnabled })
+    $EnabledDynamicTargeting = @($EnabledAgentTargeting | Where-Object { $_.IsDynamic })
+    $EnabledStaticOnlyTargeting = @($EnabledAgentTargeting | Where-Object { -not $_.IsDynamic })
 
-    if ($EnabledAgentTargeting.Count -gt 0) {
-        $Result = "Well done. $($EnabledAgentTargeting.Count) enabled Conditional Access policy(ies) " +
-            "target agent identities (checked $($Policies.Count) polic(ies) total)."
+    if ($EnabledDynamicTargeting.Count -gt 0) {
+        $Result = "Well done. $($EnabledDynamicTargeting.Count) enabled Conditional Access policy(ies) " +
+            'target agent identities dynamically, via a filter or risk condition that automatically ' +
+            "covers current and future agent identities (checked $($Policies.Count) polic(ies) total)."
+        if ($EnabledStaticOnlyTargeting.Count -gt 0) {
+            $Result += " $($EnabledStaticOnlyTargeting.Count) additional enabled polic(ies) target " +
+                'agent identities by a static ID list only; see the Partial-coverage condition for ' +
+                'what that means on its own.'
+        }
         Add-MtTestResultDetail -Result $Result
         return $true
+    }
+
+    if ($EnabledStaticOnlyTargeting.Count -gt 0) {
+        $Result = "Found $($EnabledStaticOnlyTargeting.Count) enabled Conditional Access policy(ies) " +
+            'that target agent identities, but only by a static includeAgentIdServicePrincipals ID ' +
+            'list -- not a filter or risk condition. Partial coverage: a newly created agent identity ' +
+            'is not automatically covered until an admin adds its ID to the policy.'
+        $Result += "`n`n| Policy ID | Display name | Agent identity ID(s) listed |"
+        $Result += "`n| --- | --- | --- |"
+        foreach ($Item in $EnabledStaticOnlyTargeting) {
+            $Name = [string]$Item.DisplayName
+            if ([string]::IsNullOrWhiteSpace($Name)) { $Name = '(unnamed)' }
+            $Name = [System.Net.WebUtility]::HtmlEncode($Name) -replace '\|', '&#124;'
+            $Name = $Name -replace "`r?`n", ' '
+            $Result += "`n| $($Item.PolicyId) | $Name | $($Item.IncludedIdCount) |"
+        }
+        Add-MtTestResultDetail -Result $Result -Severity 'Medium'
+        return $false
     }
 
     if ($AgentTargeting.Count -eq 0) {

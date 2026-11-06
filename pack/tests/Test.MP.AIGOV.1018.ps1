@@ -33,7 +33,7 @@ function Test-MPAIGOV1018 {
         Area         = 'ai',
         ResourceType = 'Agent',
         Severity     = 'High',
-        Control      = 'nist-800-53-r5:AC-6',
+        Control      = 'nist-800-53-r5:IR-4',
         Permission   = 'Graph:Application:IdentityRiskyAgent.Read.All',
         Service      = 'Graph',
         Lifecycle    = 'Preview'
@@ -55,7 +55,13 @@ function Test-MPAIGOV1018 {
         if ($ErrorRecord.Exception.Message -match '(?i)403|forbidden|authorization') {
             Add-MtTestResultDetail -SkippedBecause NotAuthorized -Result (
                 "Couldn't read risky agent identities (403). Confirm the IdentityRiskyAgent.Read.All " +
-                'permission before re-running this check.'
+                'permission, and that a Microsoft Agent 365 license is assigned if this tenant has ' +
+                'started requiring one for Identity Protection for agents, before re-running this check.'
+            )
+        } elseif ($ErrorRecord.Exception.Message -match '(?i)404|not found|does not exist|invalid.*resource') {
+            Add-MtTestResultDetail -SkippedBecause Error -Result (
+                "Couldn't read the riskyAgents endpoint (not found). This beta endpoint may not yet " +
+                'be rolled out in this tenant, or Identity Protection for agents may not be enabled.'
             )
         } else {
             Add-MtTestResultDetail -SkippedBecause Error -SkippedError $ErrorRecord

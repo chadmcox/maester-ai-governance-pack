@@ -22,7 +22,12 @@ function Test-MPAIGOV1016 {
     ultimately authenticates with a stored secret, it is only the secret's storage that differs);
     OAuthPluginVault and DynamicClientRegistration are a pass (an Entra/OAuth identity flow);
     ConnectionVault (developer preview) is treated as Medium pending broader documentation, the
-    same conservative treatment as AzureKeyVault. Either Medium or High finding is reported as
+    same conservative treatment as AzureKeyVault. An entirely missing or unparseable authorization
+    object -- as opposed to a well-formed authorization object whose type is the documented literal
+    "None" -- is reported separately as "Unspecified" rather than folded into the "None" bucket:
+    both drive the same High severity outcome (neither represents an enforced identity flow), but
+    an admin reviewing the observed-values list should be able to tell a deliberately anonymous MCP
+    server from one whose manifest is missing or malformed. Either Medium or High finding is reported as
     worse when the package is tenant-wide, using the same availableTo/deployedTo signal as
     MP.AIGOV.1007/1011. Only the MCP server's scheme and host are ever reported -- never the full
     mcpServerUrl, matching MP.AIGOV.1008. Reading this endpoint may require a Microsoft Agent 365
@@ -55,9 +60,12 @@ function Test-MPAIGOV1016 {
     # None/missing = no authentication at all. ApiKeyPluginVault/AzureKeyVault = a static secret,
     # not a token-issuing identity flow. ConnectionVault is developer preview and treated the same
     # as AzureKeyVault pending broader documentation. OAuthPluginVault/DynamicClientRegistration are
-    # not in this map at all -- anything not present here is a pass.
+    # not in this map at all -- anything not present here is a pass. "Unspecified" covers an
+    # entirely missing/unparseable authorization object, kept distinct from the documented literal
+    # "None" value so the observed-values summary doesn't conflate the two.
     $WeakAuthTypes = @{
         'None'              = 'High'
+        'Unspecified'       = 'High'
         'ApiKeyPluginVault' = 'Medium'
         'AzureKeyVault'     = 'Medium'
         'ConnectionVault'   = 'Medium'
@@ -119,8 +127,15 @@ function Test-MPAIGOV1016 {
                 $RemoteMcpServer = $Parsed.toolSource.remoteMcpServer
                 if ($null -eq $RemoteMcpServer) { continue }
 
-                $AuthType = [string]$RemoteMcpServer.authorization.type
-                if ([string]::IsNullOrWhiteSpace($AuthType)) { $AuthType = 'None' }
+                $RawAuthType = [string]$RemoteMcpServer.authorization.type
+                if ($null -eq $RemoteMcpServer.authorization -or [string]::IsNullOrWhiteSpace($RawAuthType)) {
+                    # No authorization object at all, or a present-but-empty type -- distinct from
+                    # the documented literal "None" value, which means the manifest explicitly
+                    # declares anonymous access.
+                    $AuthType = 'Unspecified'
+                } else {
+                    $AuthType = $RawAuthType
+                }
                 [void]$ObservedAuthTypes.Add($AuthType)
 
                 $SchemeHost = $null

@@ -16,6 +16,12 @@ which covers a different, non-agent resource. The Learn page for this feature cu
 Identity Protection for agents will require a Microsoft Agent 365 license "starting soon" (not
 required at the time this test was written).
 
+A 403 is reported as `NotAuthorized` with a message calling out the `IdentityRiskyAgent.Read.All`
+permission and the possibility that this tenant has already started requiring a Microsoft Agent 365
+license. A 404 is reported separately (also skipped, not a pass) with a message noting the beta
+endpoint may not yet be rolled out in this tenant, or Identity Protection for agents may not be
+enabled — distinct from an unrelated failure, which still skips with the generic `Error` path.
+
 > [!NOTE]
 > **Validated** 2026-11-06 against a real Microsoft 365 test tenant (F7-licensed), after the user
 > pre-consented the `IdentityRiskyAgent.Read.All` scope. The run correctly **Passed** (true

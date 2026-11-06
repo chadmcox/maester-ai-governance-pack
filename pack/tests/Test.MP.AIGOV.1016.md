@@ -8,8 +8,12 @@ and `ConnectionVault` (developer preview) — not literal strings like "anonymou
 classifying anything, so an unexpected or newly introduced value is visible rather than silently
 bucketed.
 
-Classification: `None` or a missing/unparseable authorization type is **High** — the server has no
-authentication at all. `ApiKeyPluginVault` and `AzureKeyVault` are **Medium** — both ultimately
+Classification: `None` is **High** — the server declares no authentication at all. A missing or
+unparseable `authorization` object (no type in the manifest at all, rather than a well-formed
+object whose type is the documented literal `None`) is reported separately as **Unspecified**, also
+**High** — neither represents an enforced identity flow, but an admin reviewing the observed-values
+list should be able to tell a deliberately anonymous MCP server from one whose manifest is missing
+or malformed. `ApiKeyPluginVault` and `AzureKeyVault` are **Medium** — both ultimately
 authenticate with a stored static secret rather than an identity-based token flow; `AzureKeyVault`
 only changes where that secret is stored. `ConnectionVault` (developer preview) is treated the same
 as `AzureKeyVault` pending broader documentation. `OAuthPluginVault` and
