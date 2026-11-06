@@ -10,13 +10,18 @@ Install-MtPack chadmcox/maester-ai-governance-pack
 
 | ID | Title | Lifecycle | Status |
 | --- | --- | --- | --- |
-| MP.AIGOV.1001 | Agent catalog adoption is below a configurable threshold over the D90 report period | Preview | NOT VALIDATED (needs an Agent 365-licensed tenant) |
-| MP.AIGOV.1002 | Blocked package has an open pending install or consent request | Preview | NOT VALIDATED (needs an Agent 365-licensed tenant) |
-| MP.AIGOV.1003 | Agent is assigned directly to users instead of via a group | Preview | NOT VALIDATED (needs an Agent 365-licensed tenant) |
-| MP.AIGOV.1004 | Agent identity, blueprint, or blueprint principal has exactly one sponsor and zero owners | Preview | Built, Graph only |
-| MP.AIGOV.1005 | Classic Copilot Studio service principal has no corresponding Agent ID registration | Preview | Built, Graph only |
-| MP.AIGOV.1006 | Agent display name or description is empty or a placeholder value | Preview | NOT VALIDATED (needs an Agent 365-licensed tenant) |
-| MP.AIGOV.1007 | Custom or external package is available or deployed tenant-wide | Preview | NOT VALIDATED (needs an Agent 365-licensed tenant) |
+| MP.AIGOV.1001 | Agent catalog adoption is below a configurable threshold over the D90 report period | Preview | Validated, Graph only |
+| MP.AIGOV.1002 | Blocked package has an open pending install or consent request | Preview | Validated, Graph only |
+| MP.AIGOV.1003 | Agent is assigned directly to users instead of via a group | Preview | Validated, Graph only |
+| MP.AIGOV.1004 | Agent identity, blueprint, or blueprint principal has exactly one sponsor and zero owners | Preview | Validated, Graph only |
+| MP.AIGOV.1005 | Classic Copilot Studio service principal has no corresponding Agent ID registration | Preview | Validated, Graph only |
+| MP.AIGOV.1006 | Agent display name or description is empty or a placeholder value | Preview | Validated, Graph only |
+| MP.AIGOV.1007 | Custom or external package is available or deployed tenant-wide | Preview | Validated, Graph only |
+| MP.AIGOV.1008 | MCP server endpoint should not be reachable over plain HTTP | Preview | Validated, Graph only |
+| MP.AIGOV.1009 | Agent Identity Blueprint credential should not be nearing expiration | Preview | Validated, Graph only |
+| MP.AIGOV.1010 | MCP server should be hosted on an allowlisted domain | Preview | Validated, Graph only |
+| MP.AIGOV.1011 | MCP tool with a destructive or open-world effect should not be in a tenant-wide package | Preview | Validated, Graph only |
+| MP.AIGOV.1012 | Agent skill should have a clear description, and should not be exposed to Copilot tenant-wide without review | Preview | Validated, Graph only |
 
 See [`docs/pilot-and-open-questions.md`](docs/pilot-and-open-questions.md) for the full data-source
 and skip-condition rationale behind each test, and [`docs/coverage-matrix.md`](docs/coverage-matrix.md)
