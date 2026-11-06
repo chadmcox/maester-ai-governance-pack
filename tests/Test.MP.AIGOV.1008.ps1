@@ -26,6 +26,7 @@ function Test-MPAIGOV1008 {
         Area         = 'ai',
         ResourceType = 'Agent',
         Severity     = 'High',
+        Control      = 'nist-800-53-r5:SC-8',
         Permission   = 'Graph:Application:CopilotPackages.Read.All',
         Service      = 'Graph',
         Lifecycle    = 'Preview',
@@ -57,6 +58,7 @@ function Test-MPAIGOV1008 {
     Write-Verbose "Found $($McpPackages.Count) package(s) with an MCP server element."
 
     $InsecureUrls = [System.Collections.Generic.List[pscustomobject]]::new()
+    $FailedPackageCount = 0
     foreach ($Package in $McpPackages) {
         $PackageId = [string]$Package.id
         if ([string]::IsNullOrWhiteSpace($PackageId)) { continue }
@@ -64,12 +66,15 @@ function Test-MPAIGOV1008 {
         try {
             $Detail = Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri "copilot/admin/catalog/packages/$PackageId"
         } catch {
-            # One package's detail call failing should not fail every other package already evaluated.
+            # One package's detail call failing should not fail every other package already evaluated,
+            # but it must be counted so a silent gap in coverage is never reported as a clean pass.
             Write-Verbose "Skipping package $PackageId after a detail-read error: $($_.Exception.Message)"
+            $FailedPackageCount++
             continue
         }
 
         $AgentConnectorDetails = @($Detail.elementDetails | Where-Object { $_.elementType -eq 'AgentConnectors' })
+        $PackageHadParseFailure = $false
         foreach ($ConnectorDetail in $AgentConnectorDetails) {
             foreach ($Element in @($ConnectorDetail.elements)) {
                 if ([string]::IsNullOrWhiteSpace($Element.definition)) { continue }
@@ -78,6 +83,7 @@ function Test-MPAIGOV1008 {
                     $Parsed = $Element.definition | ConvertFrom-Json -ErrorAction Stop
                 } catch {
                     Write-Verbose "Could not parse an AgentConnectors definition for package $PackageId`: $_"
+                    $PackageHadParseFailure = $true
                     continue
                 }
 
@@ -85,39 +91,60 @@ function Test-MPAIGOV1008 {
                 if ([string]::IsNullOrWhiteSpace($McpServerUrl)) { continue }
 
                 try {
-                    $Scheme = ([uri]$McpServerUrl).Scheme
+                    $Uri = [uri]$McpServerUrl
                 } catch {
-                    Write-Verbose "Could not parse MCP server URL '$McpServerUrl' for package $PackageId."
+                    Write-Verbose "Could not parse MCP server URL for package $PackageId."
+                    $PackageHadParseFailure = $true
                     continue
                 }
 
-                if ($Scheme -eq 'http') {
+                if ($Uri.Scheme -eq 'http') {
                     $InsecureUrls.Add([pscustomobject]@{
                         PackageId   = $PackageId
                         DisplayName = [string]$Package.displayName
-                        McpServerUrl = $McpServerUrl
+                        # Report scheme + host only: the full URL (path/query/fragment/userinfo)
+                        # is never surfaced, since it may carry tenant- or tool-specific identifiers.
+                        SchemeHost  = "$($Uri.Scheme)://$($Uri.Authority)"
                     })
                 }
             }
         }
+        if ($PackageHadParseFailure) { $FailedPackageCount++ }
+    }
+
+    if ($McpPackages.Count -gt 0 -and $FailedPackageCount -eq $McpPackages.Count) {
+        Add-MtTestResultDetail -SkippedBecause Error -Result (
+            "Could not evaluate any of the $($McpPackages.Count) package(s) with an MCP server element " +
+            "-- every detail call or definition parse failed. See verbose logs for details."
+        )
+        return $null
     }
 
     if ($InsecureUrls.Count -eq 0) {
-        Add-MtTestResultDetail -Result (
-            "Well done. No MCP server endpoint is reachable over plain HTTP ($($McpPackages.Count) package(s) with an MCP server element checked)."
-        )
+        $Result = "Well done. No MCP server endpoint is reachable over plain HTTP " +
+            "($($McpPackages.Count) package(s) with an MCP server element checked)."
+        if ($FailedPackageCount -gt 0) {
+            $Result += "`n`n$FailedPackageCount package(s) could not be evaluated (detail-read or parse error) " +
+                'and are not reflected in this result.'
+        }
+        Add-MtTestResultDetail -Result $Result
         return $true
     }
 
     $Result = "Found $($InsecureUrls.Count) MCP server endpoint(s) reachable over plain HTTP."
-    $Result += "`n`n| Package ID | Display name | MCP server URL |"
+    if ($FailedPackageCount -gt 0) {
+        $Result += " $FailedPackageCount package(s) could not be evaluated (detail-read or parse error) " +
+            'and are not reflected below.'
+    }
+    $Result += "`n`n| Package ID | Display name | MCP server host |"
     $Result += "`n| --- | --- | --- |"
     foreach ($Item in $InsecureUrls) {
         $Name = [string]$Item.DisplayName
         if ([string]::IsNullOrWhiteSpace($Name)) { $Name = '(unnamed)' }
         $Name = [System.Net.WebUtility]::HtmlEncode($Name) -replace '\|', '&#124;'
         $Name = $Name -replace "`r?`n", ' '
-        $Result += "`n| $($Item.PackageId) | $Name | $($Item.McpServerUrl) |"
+        $SchemeHost = [System.Net.WebUtility]::HtmlEncode([string]$Item.SchemeHost) -replace '\|', '&#124;'
+        $Result += "`n| $($Item.PackageId) | $Name | $SchemeHost |"
     }
 
     Add-MtTestResultDetail -Result $Result -Severity 'High'
