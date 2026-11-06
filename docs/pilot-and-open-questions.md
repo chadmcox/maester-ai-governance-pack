@@ -114,6 +114,33 @@ written (four Covered rows for MT.1208, zero-sponsor-only scope for MT.1205).
 > All three executed live via `Invoke-Maester` (not just manual Graph queries) and
 > Failed as expected (true positives) against the test tenant.
 
+> **Update — Billing batch built and live-validated:** G15/G16/G18 were picked up
+> after confirming the beta `spendingPolicy` schema directly from the Graph
+> `$metadata` (not just sample responses): exactly two concrete subtypes exist,
+> `allUsersSpendingPolicy` and `selectedGroupsSpendingPolicy` (the latter's
+> `assignedGroups` navigation property is only reachable via an explicit
+> type-cast path segment, `.../{id}/microsoft.graph.selectedGroupsSpendingPolicy/
+> assignedGroups` — a plain `$expand` and a bare sub-path both 400). This is a
+> delegated-permission-only surface (Microsoft Learn lists Application
+> permission type as not supported for both scopes used below).
+> - `MP.AIGOV.1013` — G15, enabled spending policy with an unbounded
+>   `periodLimit`. Live run (via `Invoke-Maester`, not just a manual query)
+>   **Failed**: all 8 currently-enabled policies in the test tenant were
+>   unlimited — true positive.
+> - `MP.AIGOV.1014` — G16, group backing a `selectedGroupsSpendingPolicy` with
+>   fewer than 2 owners or a blank description. Live run **Failed**: all 8
+>   distinct backing groups had zero owners, several also had no description —
+>   true positive.
+> - `MP.AIGOV.1015` — G18, same group assigned to more than one enabled policy
+>   at once. Live run **Passed**: zero overlaps found in the test tenant — a
+>   well-formed true negative, not evidence the condition can't occur.
+>
+> G17 (members assigned directly to a policy, bypassing group) was investigated
+> and **dropped**: the full `$metadata` read found no per-user, non-group
+> assignment subtype anywhere in the `spendingPolicy` hierarchy — same
+> disposition as the earlier-dropped G21 (a design that turned out not to map to
+> any real, buildable Graph-API condition, not a gap in effort).
+
 **Optional, not required for Phase 2 to start:** draft an upstream issue against
 `maester365/maester` for the declared-vs-shipped severity mismatch found in both
 `Test.MT.1118.ps1` (declared `Medium`, emits `Severity 'High'`) and
