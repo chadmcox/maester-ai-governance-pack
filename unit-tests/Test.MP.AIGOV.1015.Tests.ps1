@@ -3,12 +3,8 @@
 # lives outside pack/.
 
 BeforeAll {
-    $MaesterModulePath = $env:MAESTER_MODULE_PATH
-    if (-not $MaesterModulePath) {
-        throw 'MAESTER_MODULE_PATH must point at a local Maester.psd1 (needed for the [MaesterTest()] attribute type).'
-    }
-    Import-Module $MaesterModulePath -Force
-
+    # The Maester module (for the [MaesterTest()] attribute type) is imported once at the
+    # CI/session level before Invoke-Pester runs -- see unit-tests/Test.MP.AIGOV.1006.Tests.ps1.
     . "$PSScriptRoot/../pack/helpers/Get-AIGovCostManagementSkipMessage.ps1"
     . "$PSScriptRoot/../pack/helpers/Get-AIGovSpendingLimit.ps1"
     . "$PSScriptRoot/../pack/helpers/Add-AIGovSpendingAudiencePolicy.ps1"
@@ -33,13 +29,16 @@ BeforeAll {
         $script:MockPolicies = $Policies
         $script:MockGroups = $GroupsByPolicy
         Mock Invoke-MtGraphRequest {
-            if ($RelativeUri -eq 'copilot/costManagement/spendingPolicies') { return $script:MockPolicies }
-            if ($RelativeUri -match 'spendingPolicies/([^/]+)/microsoft\.graph\.selectedGroupsSpendingPolicy/assignedGroups$') {
+            # Invoke-MtGraphRequest declares -RelativeUri as [string[]], so even a single-URI call
+            # binds an array here: compare the first element, not the array itself.
+            $Uri = [string]$RelativeUri[0]
+            if ($Uri -eq 'copilot/costManagement/spendingPolicies') { return $script:MockPolicies }
+            if ($Uri -match 'spendingPolicies/([^/]+)/microsoft\.graph\.selectedGroupsSpendingPolicy/assignedGroups$') {
                 $Id = $Matches[1]
                 if ($script:MockGroups[$Id] -eq 'throw') { throw [System.Exception]::new('Service unavailable') }
                 return @($script:MockGroups[$Id])
             }
-            throw "Unexpected RelativeUri: $RelativeUri"
+            throw "Unexpected RelativeUri: $Uri"
         }
     }
 
