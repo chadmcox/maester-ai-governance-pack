@@ -29,7 +29,7 @@ the installed pack -- see the comment in
 | MP.AIGOV.1012 | Agent skill should have a clear description, and should not be exposed to Copilot tenant-wide without review | Preview | Validated, Graph only |
 | MP.AIGOV.1013 | Enabled spending policy should have a credit ceiling | Preview | Validated, Graph only |
 | MP.AIGOV.1014 | Group backing a spending policy should have owners and a description | Preview | Validated, Graph only |
-| MP.AIGOV.1015 | Group should not be assigned to more than one enabled spending policy | Preview | Validated, Graph only |
+| MP.AIGOV.1015 | Spending policy cap should not be overridden by a more permissive overlapping policy | Preview | Revised, re-validation pending, Graph only |
 | MP.AIGOV.1016 | MCP server should not use weak or no authentication | Preview | Validated, Graph only |
 | MP.AIGOV.1017 | Conditional Access should cover agent identities | Preview | Validated, Graph only |
 | MP.AIGOV.1018 | Agent identity currently at risk should be remediated or dismissed | Preview | Validated, Graph only |

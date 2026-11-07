@@ -4,7 +4,7 @@
   "Guid": "312805e3-4f72-45c0-ba29-7e13582f1cca",
   "Name": "AI Governance",
   "Description": "Findings for how AI agents, agent identities, and the Copilot agent catalog are governed in Microsoft 365: sponsor/owner coverage, classic Copilot Studio service principals without an Agent ID, catalog adoption, blocked-package requests, direct user assignment, tenant-wide custom package deployment, MCP server transport security and host allowlisting, destructive/open-world MCP tools in tenant-wide packages, agent skill description hygiene, blueprint credentials nearing expiration, and Copilot spending-policy credit ceilings, group governance, and overlap.",
-  "Version": "0.4.0",
+  "Version": "0.4.1",
   "Publisher": "chadmcox",
   "License": "MIT",
   "RequiresMaester": ">=3.0",
