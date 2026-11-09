@@ -1,8 +1,10 @@
 > [!NOTE]
-> **Revised** 2026-11-06 to follow Microsoft's documented rule that the most permissive overlapping
-> spending policy is enforced. The earlier version (validated 2026-11-06, true negative across 8
-> enabled group-scoped policies) only flagged a group in two group-scoped policies and described the
-> outcome as implementation-defined. **Re-validate against a live tenant before relying on this version.**
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant (F7-licensed), via an actual
+> `Invoke-Maester` run of this revised (most-permissive-policy-wins) version. The run correctly
+> **Passed** (true negative): across 8 enabled spending policies and 8 audiences checked, no
+> audience's per-user cap was overridden by a more permissive overlapping policy. This is a
+> well-formed negative, not evidence the overlap condition can't occur — a tenant that assigns a
+> group to two policies with different per-user limits would be flagged.
 
 When more than one spending policy applies to a person, the most permissive one is enforced: the higher
 limit applies, and limits from overlapping policies aren't added together. A lower per-user cap in an
