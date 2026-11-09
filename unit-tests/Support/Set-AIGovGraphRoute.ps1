@@ -1,7 +1,8 @@
 # Shared helper for unit tests. Not a *.Tests.ps1 file, so Invoke-Pester doesn't run it directly.
 #
 # Set-AIGovGraphRoute mocks Invoke-MtGraphRequest from an ordered list of routes. Each route is
-# @('<regex matched against the relative URI>', <value>). The first matching route wins.
+# @('<regex matched against the relative URI>', <value>[, '<regex matched against -Filter>']).
+# The first matching route wins. Without the third element, the filter isn't checked.
 # A value that is a string starting with 'throw:' throws that message instead of returning.
 # Call it inside an It or BeforeEach block so the mock is scoped to that test.
 function Set-AIGovGraphRoute {
@@ -12,6 +13,7 @@ function Set-AIGovGraphRoute {
         # -RelativeUri is [string[]] on Invoke-MtGraphRequest: use the first element.
         $Uri = [string]$RelativeUri[0]
         foreach ($Route in $script:AIGovRoutes) {
+            if ($Route.Count -ge 3 -and [string]$Filter -notmatch $Route[2]) { continue }
             if ($Uri -match $Route[0]) {
                 $Value = $Route[1]
                 if ($Value -is [string] -and $Value.StartsWith('throw:')) { throw [System.Exception]::new($Value.Substring(6)) }

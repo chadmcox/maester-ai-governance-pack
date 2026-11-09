@@ -34,6 +34,11 @@ the installed pack -- see the comment in
 | MP.AIGOV.1017 | Conditional Access should cover agent identities | Preview | Validated, Graph only |
 | MP.AIGOV.1018 | Agent identity currently at risk should be remediated or dismissed | Preview | Validated, Graph only |
 | MP.AIGOV.1019 | Agent identity should not have user-consented delegated permissions | Preview | Validated, Graph only |
+| MP.AIGOV.1020 | Custom agent or tool that nobody uses should be blocked or removed | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1021 | Group an agent or tool is assigned to should exist, have two owners and a description | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1022 | Agent identity should not hold broad Microsoft Graph write permissions | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1023 | Agent identity and blueprint should have a clear name and description | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1024 | Classic Copilot Studio service principal should have an owner and be in use | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1025 | Spending policy should be scoped to a group and fully configured | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1026 | Enabled spending policy should alert at least two active recipients | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1027 | Group behind a spending policy should be a populated security group without nesting | Preview | Not yet validated, Graph only |
