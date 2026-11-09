@@ -1,5 +1,12 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from chadmcox/Copilot "Agent and Tools Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Passed**: none of 19 agent identities or blueprint principals holds a broad Graph
+> write permission outside MT.1223's list. `appRoleAssignments` and `oauth2PermissionGrants` read and
+> typed as expected, including `consentType`. The beta `inheritedAppRoleAssignments` and
+> `inheritedOauth2PermissionGrants` navigation properties also read without error for all 11 agent
+> identities, but every one came back empty in this tenant — so whether an inherited grant itself carries
+> `consentType` is still unconfirmed live; the code's fallback (treat a missing `consentType` as
+> admin-consented) hasn't been exercised against a non-empty case.
 
 Maester's MT.1223 reports agent identities holding the twelve Microsoft Graph permissions on its
 privilege-escalation list. This test covers broad permissions outside that list, on agent identities and

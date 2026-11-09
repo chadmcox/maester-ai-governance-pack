@@ -114,4 +114,14 @@ Describe 'Test-MPAIGOV1032' {
         Test-MPAIGOV1032 | Should -BeNullOrEmpty
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'NotAuthorized' }
     }
+
+    # Regression: confirmed live against the test tenant that $select=id alone on this beta
+    # navigation property 404s, even though the exact same request with two or more fields succeeds.
+    It 'asks for more than just id when reading assignedGroups' {
+        Set-AIGovGraphRoute (Get-Routes @((New-Member 'alice')))
+        Test-MPAIGOV1032 | Should -BeTrue
+        Should -Invoke Invoke-MtGraphRequest -ParameterFilter {
+            ([string]$RelativeUri[0]) -match 'assignedGroups$' -and @($Select).Count -gt 1 -and $Select -contains 'id'
+        }
+    }
 }

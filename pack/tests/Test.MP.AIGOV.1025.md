@@ -1,5 +1,9 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from the policy rules in chadmcox/Copilot "Billing Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Failed** (true positive): 10 problems across 3 group-scoped "Test Cowork ..."
+> policies (disabled status, no group linked, billing method not set, a per-user limit below the default
+> 2,000-credit threshold). No `allUsersSpendingPolicy` exists in this tenant yet, so the "scope All users"
+> High-severity path wasn't exercised against real data this run.
 
 Checks that every Copilot spending policy is scoped to an existing security group and fully configured.
 

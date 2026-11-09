@@ -55,10 +55,12 @@ function Test-MPAIGOV1027 {
     $GroupPolicies = @{}
     foreach ($Policy in @($Policies)) {
         try {
+            # Confirmed live: $select=id alone on this beta navigation property 404s; asking for a
+            # second property (here displayName) works. Keep at least two fields in -Select.
             $Assigned = @(
                 Invoke-MtGraphRequest -ApiVersion 'beta' `
                     -RelativeUri "copilot/costManagement/spendingPolicies/$($Policy.id)/microsoft.graph.selectedGroupsSpendingPolicy/assignedGroups" `
-                    -Select @('id')
+                    -Select @('id', 'displayName')
             )
         } catch {
             Write-Verbose "Couldn't read assignedGroups for spending policy $($Policy.id): $($_.Exception.Message)"

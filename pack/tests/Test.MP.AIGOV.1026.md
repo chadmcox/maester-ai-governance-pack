@@ -1,5 +1,9 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from the alert rules in chadmcox/Copilot "Billing Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Failed** (true positive): all 8 enabled spending policies in this tenant have no
+> email alert configured. Confirms `emailThresholdSettings` reads and types as expected (`isEnabled`,
+> `threshold`). No enabled policy in this tenant has an alert turned on, so the recipient-disabled and
+> single-recipient paths weren't exercised against real data this run.
 
 Checks that every enabled Copilot spending policy sends a budget alert to at least two active people.
 Without a working alert, nobody hears about a policy nearing its limit until users are blocked.

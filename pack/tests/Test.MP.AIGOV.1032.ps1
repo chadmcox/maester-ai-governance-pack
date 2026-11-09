@@ -111,8 +111,10 @@ function Test-MPAIGOV1032 {
                 Invoke-MtGraphRequest -ApiVersion 'beta' -RelativeUri "$Base/serviceSettings" |
                     Where-Object { [string]$_.state -eq 'enabled' } | ForEach-Object { [string]$_.serviceId }
             )
+            # Confirmed live: $select=id alone on this beta navigation property 404s; asking for a
+            # second property (here displayName) works. Keep at least two fields in -Select.
             $Groups = @(
-                Invoke-MtGraphRequest -ApiVersion 'beta' -RelativeUri "$Base/microsoft.graph.selectedGroupsSpendingPolicy/assignedGroups" -Select @('id')
+                Invoke-MtGraphRequest -ApiVersion 'beta' -RelativeUri "$Base/microsoft.graph.selectedGroupsSpendingPolicy/assignedGroups" -Select @('id', 'displayName')
             )
         } catch {
             Write-Verbose "Couldn't read services or groups for spending policy $($Policy.id): $($_.Exception.Message)"

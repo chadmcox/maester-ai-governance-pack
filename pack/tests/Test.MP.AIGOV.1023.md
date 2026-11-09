@@ -1,5 +1,9 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from chadmcox/Copilot "Agent and Tools Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Failed** (true positive): 5 agent identities and blueprints were flagged for unclear
+> names, including a case where the ` (Microsoft Copilot Studio)` suffix was correctly ignored and the
+> remaining name ("TestEntraID") still matched the placeholder rule. Confirms the shared naming helper
+> (ported from `MP.AIGOV.1006`) works against live Entra Agent ID objects.
 
 Checks names and descriptions on Entra Agent ID objects (`MP.AIGOV.1006` does the same for catalog packages).
 

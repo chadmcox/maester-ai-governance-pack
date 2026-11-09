@@ -1,5 +1,8 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from chadmcox/Copilot "Agent and Tools Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Failed** (true positive): one custom agent ("Vani") was never used and hadn't been
+> modified in over 180 days. The package-detail `activeUsers` and `lastUsedDateTime` properties read and
+> typed as expected.
 
 Finds custom or external agents and tools in the Copilot catalog that nobody uses: not blocked, no active
 users in the last 30 days, last used more than `StaleDays` ago (or never), and not changed in `StaleDays`.

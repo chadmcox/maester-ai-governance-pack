@@ -1,5 +1,10 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from the group rules in chadmcox/Copilot "Billing Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Failed** (true positive): the group behind the "Cowork Limited" policy has a nested
+> group. First live run surfaced a real bug: the beta `assignedGroups` navigation property under
+> `selectedGroupsSpendingPolicy` returns HTTP 404 when `-Select` asks for a single field (`id` alone), even
+> though the resource exists; asking for two or more fields (`id`, `displayName`) works. Fixed by widening
+> `-Select`, with a regression unit test and the same fix applied to `MP.AIGOV.1032`.
 
 Checks the groups linked to enabled Copilot spending policies. Microsoft documents security groups as the way
 to put specific users in a spending policy.

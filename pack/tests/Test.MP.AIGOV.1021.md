@@ -1,5 +1,8 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from chadmcox/Copilot "Agent and Tools Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Passed**: no agent or tool in this tenant is assigned to a group, so this is a
+> vacuous true negative — the deleted-group, owner-count and description checks themselves weren't
+> exercised against a real group assignment.
 
 Checks the groups that agents and tools are assigned to (who can use or install them). Each group decides
 who gets the agent, so someone has to own its membership.

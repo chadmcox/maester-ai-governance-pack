@@ -1,5 +1,13 @@
 > [!NOTE]
-> **Not yet validated** against a live tenant. Ported from the member rules in chadmcox/Copilot "Billing Health Check".
+> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
+> The run correctly **Failed** (true positive): 4 of 5 spending-policy group members were flagged
+> (disabled account, guest account, missing Copilot license, stale sign-in). Confirms `serviceSettings`,
+> `transitiveMembers/microsoft.graph.user` (with `assignedLicenses` and `licenseAssignmentStates`), and
+> batched `users -UniqueId -Select @('id','signInActivity')` all read and type as expected; no 404 occurred
+> inside that batch for the 5 real member IDs checked. First live run surfaced a real bug: the beta
+> `assignedGroups` navigation property under `selectedGroupsSpendingPolicy` 404s when `-Select` asks for a
+> single field (`id` alone); asking for two or more fields works. Fixed by widening `-Select`, with a
+> regression unit test (same fix applied to `MP.AIGOV.1027`).
 
 Checks the people in groups linked to enabled Copilot spending policies (including members of nested groups).
 Each one reported is Medium:
