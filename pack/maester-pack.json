@@ -3,8 +3,8 @@
   "Id": "chadmcox.ai-governance",
   "Guid": "312805e3-4f72-45c0-ba29-7e13582f1cca",
   "Name": "AI Governance",
-  "Description": "Findings for how AI agents, agent identities, and the Copilot agent catalog are governed in Microsoft 365: sponsor/owner coverage, classic Copilot Studio service principals without an Agent ID, catalog adoption, blocked-package requests, direct user assignment, tenant-wide custom package deployment, MCP server transport security and host allowlisting, destructive/open-world MCP tools in tenant-wide packages, agent skill description hygiene, blueprint credentials nearing expiration, and Copilot spending-policy credit ceilings, group governance, and overlap.",
-  "Version": "0.5.0",
+  "Description": "Findings for how AI agents, agent identities, and the Copilot agent catalog are governed in Microsoft 365: sponsor/owner coverage, classic Copilot Studio service principals without an Agent ID, catalog adoption, blocked-package requests, direct user assignment, tenant-wide custom package deployment, MCP server transport security and host allowlisting, destructive/open-world MCP tools in tenant-wide packages, agent skill description hygiene, blueprint credentials nearing expiration, and Copilot spending-policy configuration, alerting, credit ceilings, group governance, membership hygiene, and overlap.",
+  "Version": "0.6.0",
   "Publisher": "chadmcox",
   "License": "MIT",
   "RequiresMaester": ">=3.0",
@@ -28,7 +28,11 @@
       "CopilotCostManagement-Assignment.Read.All",
       "Group.Read.All",
       "Policy.Read.All",
-      "IdentityRiskyAgent.Read.All"
+      "IdentityRiskyAgent.Read.All",
+      "User.Read.All",
+      "GroupMember.Read.All",
+      "AuditLog.Read.All",
+      "Organization.Read.All"
     ],
     "Network": [],
     "Modules": []
