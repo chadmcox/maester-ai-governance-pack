@@ -45,7 +45,7 @@ function Test-MPAIGOV1011 {
         Write-Verbose 'Reading the Copilot package catalog for tenant-wide packages with MCP server elements.'
         $Packages = @(
             Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' `
-                -Select @('id', 'displayName', 'elementTypes', 'availableTo', 'deployedTo')
+                -Select @('id', 'displayName', 'elementTypes', 'availableTo', 'deployedTo', 'isBlocked')
         )
     } catch {
         $ErrorRecord = $_
@@ -59,8 +59,10 @@ function Test-MPAIGOV1011 {
         return $null
     }
 
+    # A blocked package can't be used even if it's still marked available to everyone, so it's skipped.
     $TenantWideMcpPackages = @($Packages | Where-Object {
         ($_.elementTypes -contains 'MCPServers') -and
+        (Test-AIGovPackageUserAccessible -Package $_) -and
         (([string]$_.availableTo -match '(?i)allowedForAll') -or ([string]$_.deployedTo -match '(?i)acquiredForAll'))
     })
     Write-Verbose "Found $($TenantWideMcpPackages.Count) tenant-wide package(s) with an MCP server element."

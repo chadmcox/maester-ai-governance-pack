@@ -49,7 +49,7 @@ function Test-MPAIGOV1007 {
         Write-Verbose 'Reading the Copilot package catalog for tenant-wide custom or external packages.'
         $Packages = @(
             Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' `
-                -Select @('id', 'displayName', 'type', 'publisher', 'availableTo', 'deployedTo', 'elementTypes')
+                -Select @('id', 'displayName', 'type', 'publisher', 'availableTo', 'deployedTo', 'elementTypes', 'isBlocked')
         )
     } catch {
         $ErrorRecord = $_
@@ -82,6 +82,9 @@ function Test-MPAIGOV1007 {
             $IsCustom = $Type -ne 'firstParty'
         }
         if (-not $IsCustom) { continue }
+
+        # A blocked package can't be used even if it's still marked available to everyone.
+        if (-not (Test-AIGovPackageUserAccessible -Package $Package)) { continue }
 
         $IsTenantWide = ([string]$Package.availableTo -match '(?i)allowedForAll') -or
             ([string]$Package.deployedTo -match '(?i)acquiredForAll')

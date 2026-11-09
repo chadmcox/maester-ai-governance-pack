@@ -40,7 +40,7 @@ function Test-MPAIGOV1008 {
         Write-Verbose 'Reading the Copilot package catalog for packages with MCP server elements.'
         $Packages = @(
             Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' `
-                -Select @('id', 'displayName', 'elementTypes')
+                -Select @('id', 'displayName', 'elementTypes', 'availableTo', 'isBlocked')
         )
     } catch {
         $ErrorRecord = $_
@@ -54,8 +54,13 @@ function Test-MPAIGOV1008 {
         return $null
     }
 
-    $McpPackages = @($Packages | Where-Object { $_.elementTypes -contains 'MCPServers' })
-    Write-Verbose "Found $($McpPackages.Count) package(s) with an MCP server element."
+    $AllMcpPackages = @($Packages | Where-Object { $_.elementTypes -contains 'MCPServers' })
+    # Only packages users can reach are in scope: blocked packages and packages available to no one
+    # are skipped, and the count is reported so the totals still add up.
+    $McpPackages = @($AllMcpPackages | Where-Object { Test-AIGovPackageUserAccessible -Package $_ })
+    $UnreachableCount = $AllMcpPackages.Count - $McpPackages.Count
+    $ScopeNote = if ($UnreachableCount -gt 0) { " $UnreachableCount blocked or allowed-for-no-one package(s) skipped." } else { '' }
+    Write-Verbose "Found $($AllMcpPackages.Count) package(s) with an MCP server element; $($McpPackages.Count) reachable by users."
 
     $InsecureUrls = [System.Collections.Generic.List[pscustomobject]]::new()
     $FailedPackageCount = 0
@@ -122,7 +127,7 @@ function Test-MPAIGOV1008 {
 
     if ($InsecureUrls.Count -eq 0) {
         $Result = "Well done. No MCP server endpoint is reachable over plain HTTP " +
-            "($($McpPackages.Count) package(s) with an MCP server element checked)."
+            "($($McpPackages.Count) package(s) with an MCP server element that users can reach checked).$ScopeNote"
         if ($FailedPackageCount -gt 0) {
             $Result += "`n`n$FailedPackageCount package(s) could not be evaluated (detail-read or parse error) " +
                 'and are not reflected in this result.'
@@ -132,6 +137,7 @@ function Test-MPAIGOV1008 {
     }
 
     $Result = "Found $($InsecureUrls.Count) MCP server endpoint(s) reachable over plain HTTP."
+    $Result += $ScopeNote
     if ($FailedPackageCount -gt 0) {
         $Result += " $FailedPackageCount package(s) could not be evaluated (detail-read or parse error) " +
             'and are not reflected below.'

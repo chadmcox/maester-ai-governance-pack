@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot/../pack/helpers/Get-AIGovPackageCatalogSkipMessage.ps1"
+    . "$PSScriptRoot/../pack/helpers/Test-AIGovPackageUserAccessible.ps1"
     . "$PSScriptRoot/../pack/tests/Test.MP.AIGOV.1016.ps1"
 }
 
