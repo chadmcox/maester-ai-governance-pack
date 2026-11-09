@@ -122,5 +122,47 @@ Describe 'Test-MPAIGOV1019 high-risk scope list drift check' {
 
         $actualHash | Should -Be $expectedHash
     }
+
+    It 'matches the pinned Maester MT.1223 source''s $RiskPaths keys exactly' {
+        # .github/workflows/test-pack.yml checks out maester365/maester (pinned commit
+        # 616559854634e5150dbde69850c4224191635bb1) to a `maester-src` directory that sits
+        # alongside this repo's own checkout, both under $env:GITHUB_WORKSPACE. Mirror that layout
+        # locally (a sibling `maester-src` checkout next to this repo) to exercise this check;
+        # elsewhere it skips rather than failing, since the sibling checkout isn't guaranteed.
+        $maesterSourcePath = Join-Path $PSScriptRoot '../../maester-src/powershell/internal/services/entra/Get-MtEntraAgentHighRiskGraphPermissionFinding.ps1'
+        if (-not (Test-Path $maesterSourcePath)) {
+            Set-ItResult -Skipped -Because (
+                "Maester source not found at $maesterSourcePath (only checked out in CI via " +
+                'test-pack.yml; add a sibling maester-src checkout locally to exercise this check).'
+            )
+            return
+        }
+
+        $maesterRaw = Get-Content -Path $maesterSourcePath -Raw
+        if ($maesterRaw -notmatch '(?s)\$RiskPaths\s*=\s*(@\{.*?\n\s*\})') {
+            throw "Could not locate the `$RiskPaths hashtable literal in $maesterSourcePath."
+        }
+        # Safe to evaluate: this is Maester's own pinned source file, not external/AI-supplied input.
+        $maesterRiskPaths = Invoke-Expression $Matches[1]
+        $maesterScopes = @($maesterRiskPaths.Keys | Sort-Object)
+
+        $ourScriptPath = Join-Path $PSScriptRoot '../pack/tests/Test.MP.AIGOV.1019.ps1'
+        $ourRaw = Get-Content -Path $ourScriptPath -Raw
+        if ($ourRaw -notmatch '(?s)\$HighRiskScopes\s*=\s*(@\([^)]*\))') {
+            throw "Could not locate the `$HighRiskScopes array literal in $ourScriptPath."
+        }
+        $ourScopes = @((Invoke-Expression $Matches[1]) | Sort-Object)
+
+        $diff = Compare-Object -ReferenceObject $maesterScopes -DifferenceObject $ourScopes
+        if ($diff) {
+            Write-Host "Maester MT.1223 `$RiskPaths keys: $($maesterScopes -join ', ')"
+            Write-Host "Pack .1019 `$HighRiskScopes:      $($ourScopes -join ', ')"
+        }
+
+        $diff | Should -BeNullOrEmpty -Because (
+            "if MT.1223's `$RiskPaths changed, update Test.MP.AIGOV.1019.ps1's `$HighRiskScopes, " +
+            'the pinned commit SHA in its .LINK/.DESCRIPTION, and the hash in the previous test.'
+        )
+    }
 }
 
