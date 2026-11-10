@@ -43,7 +43,7 @@ the installed pack -- see the comment in
 | MP.AIGOV.1026 | Enabled spending policy should alert at least two active recipients | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1027 | Group behind a spending policy should be a populated security group without nesting | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1033 | Copilot connectors users can search should only take content from apps you govern | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1033 | Copilot connectors users can search should only take content from apps you govern | Preview | Validated, Graph only |
 
 **Scope of the connector checks.** MP.AIGOV.1007, 1008, 1010, 1011 and 1016 only report on catalog
 packages users can reach: a package that is blocked (`isBlocked`) or allowed for no one

@@ -1,7 +1,12 @@
 > [!NOTE]
-> **Not yet validated live.** Built from the documented `externalConnection` schema
-> (`state`, `description`, `configuration.authorizedAppIds`); confirm against a tenant with at least
-> one synced Copilot connector.
+> **Validated** 2026-11-10 against a real Microsoft 365 test tenant. Confirmed `GET
+> /external/connections` with `-Select configuration` returns `configuration.authorizedAppIds` as
+> documented. The tenant has exactly one synced connection (`state: draft`), which the run correctly
+> excluded from scope and counted ("1 draft or obsolete connection(s) skipped") -- the run correctly
+> **Passed** (true negative: zero searchable connectors, inventory table empty). The Medium/Low
+> findings paths (missing or foreign-owned service principal, `limitExceeded`, no description)
+> were not exercised against real data this run; re-validate those once a `ready` or
+> `limitExceeded` connection exists in the tenant.
 
 Checks the synced (indexed) Copilot connectors that users can search, read from
 `GET /external/connections`. A connection is in scope when its `state` is `ready`, or `limitExceeded`
