@@ -85,6 +85,21 @@ Describe 'Connector checks skip packages users cannot reach' {
         }
     }
 
+    It '<Id> checks an MCP server in a package whose elementTypes list AgentConnectors but not MCPServers' -ForEach @(
+        @{ Id = 'MP.AIGOV.1008'; Fn = 'Test-MPAIGOV1008'; Url = 'http://plain.example.com/mcp'; Open = $false; Pattern = 'Found 1 MCP server endpoint' }
+        @{ Id = 'MP.AIGOV.1010'; Fn = 'Test-MPAIGOV1010'; Url = 'https://mcp.vendor.example/mcp'; Open = $false; Pattern = 'Found 1 MCP server endpoint' }
+        @{ Id = 'MP.AIGOV.1011'; Fn = 'Test-MPAIGOV1011'; Url = 'https://mcp.vendor.example/mcp'; Open = $true; Pattern = 'Found 1 MCP tool' }
+    ) {
+        $Pkg = [pscustomobject]@{ id = 'p9'; displayName = 'Connector-only MCP'; type = 'thirdParty'; elementTypes = @('DeclarativeCopilots', 'AgentConnectors'); availableTo = 'allowedForAll'; deployedTo = 'acquiredForAll'; isBlocked = $false }
+        $Detail = New-McpDetail $Url -OpenWorld:$Open
+        Set-AIGovGraphRoute @(
+            , @('^copilot/admin/catalog/packages$', @($Pkg))
+            , @('^copilot/admin/catalog/packages/p9$', $Detail)
+        )
+        & $Fn | Should -BeFalse
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match $Pattern -and $Result -match 'Connector-only MCP' }
+    }
+
     It 'MP.AIGOV.1007 ignores a blocked custom package available to everyone' {
         Set-AIGovGraphRoute @(
             , @('^copilot/admin/catalog/packages$', @($script:Catalog[1]))
