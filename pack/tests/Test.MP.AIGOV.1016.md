@@ -25,12 +25,24 @@ definition-parse failures are counted the same way as those tests: a partial fai
 the result, and a total failure skips with `Error` instead of reporting a false pass.
 
 > [!NOTE]
-> **Validated** 2026-11-06 against a real Microsoft 365 test tenant (F7-licensed). The run
-> correctly **Passed** (true negative): 38 packages with an MCP server element were checked, and
-> the only `authorization.type` values observed in this tenant were `DynamicClientRegistration`
-> and `OAuthPluginVault` -- both pass. No `None`/missing, `ApiKeyPluginVault`,
-> `AzureKeyVault`, or `ConnectionVault` values were present, so the Medium/High paths were not
-> exercised against real data this run.
+> **Validated** 2026-11-10 against a real Microsoft 365 test tenant (F7-licensed), after fixing a
+> false-negative bug: the candidate filter matched only the literal `elementTypes` string
+> `MCPServers`, which missed real MCP-backed packages (LawQi, LegalZoom) whose `elementTypes` carry
+> `AgentConnectors` instead. A unit test reproduces that exact shape and a package explicitly
+> declaring `authorization.type: "None"`, asserting a High finding. The filter now matches either
+> `MCPServers` or `AgentConnectors` (73 candidates vs. the old 40), with a separate confirmed-MCP
+> count tracked from the actual per-element `toolSource.remoteMcpServer` payload.
+>
+> Live, the run correctly **Passed**: only 2 of the 73 candidates are reachable by users --
+> `Sales` and `Service`, both Microsoft first-party packages whose MCP element has no
+> `authorization` block at all (`Unspecified`), correctly suppressed as platform-authenticated per
+> this test's own classification rule. 71 candidates were skipped as blocked or allowed-for-no-one,
+> including LawQi and LegalZoom: both are genuine MCP-backed packages with
+> `authorization.type: "None"` (confirmed via a direct detail-call read), but this tenant's catalog
+> now has them set to `allowedForNone` (they were `allowedForAll` in an earlier run), so the
+> High finding they would otherwise produce could not be re-exercised live this run. That reachable
+> state is a tenant-data change, not a property of this fix; the unit test is what proves the fix
+> itself against that exact package shape.
 
 #### Remediation action
 

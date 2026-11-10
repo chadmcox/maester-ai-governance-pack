@@ -7,7 +7,7 @@ function Test-MPAIGOV1011 {
     Combines two independently-confirmed signals from the Copilot package catalog. The tenant-wide
     signal is the same one MP.AIGOV.1007 uses: availableTo indicating allowedForAll, or deployedTo
     indicating acquiredForAll. The tool-risk signal comes from the per-package detail call, GET
-    /copilot/admin/catalog/packages/{id}: for packages whose elementTypes includes 'MCPServers', the
+    /copilot/admin/catalog/packages/{id}: for packages whose elementTypes includes 'MCPServers' or 'AgentConnectors', the
     elementDetails entry with elementType 'AgentConnectors' carries
     toolSource.remoteMcpServer.mcpToolDescription.tools[], each with an annotations object
     (destructiveHint, openWorldHint, readOnlyHint, idempotentHint) -- confirmed live (2026-11-06)
@@ -45,7 +45,7 @@ function Test-MPAIGOV1011 {
         Write-Verbose 'Reading the Copilot package catalog for tenant-wide packages with MCP server elements.'
         $Packages = @(
             Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' `
-                -Select @('id', 'displayName', 'elementTypes', 'availableTo', 'deployedTo')
+                -Select @('id', 'displayName', 'elementTypes', 'availableTo', 'deployedTo', 'isBlocked')
         )
     } catch {
         $ErrorRecord = $_
@@ -59,11 +59,14 @@ function Test-MPAIGOV1011 {
         return $null
     }
 
+    # A blocked package can't be used even if it's still marked available to everyone, so it's skipped.
     $TenantWideMcpPackages = @($Packages | Where-Object {
-        ($_.elementTypes -contains 'MCPServers') -and
+        # 'AgentConnectors' too: some MCP-backed packages never list 'MCPServers' (found live 2026-11-10).
+        ($_.elementTypes -contains 'MCPServers' -or $_.elementTypes -contains 'AgentConnectors') -and
+        (Test-AIGovPackageUserAccessible -Package $_) -and
         (([string]$_.availableTo -match '(?i)allowedForAll') -or ([string]$_.deployedTo -match '(?i)acquiredForAll'))
     })
-    Write-Verbose "Found $($TenantWideMcpPackages.Count) tenant-wide package(s) with an MCP server element."
+    Write-Verbose "Found $($TenantWideMcpPackages.Count) tenant-wide package(s) with an MCP server or agent connector element."
 
     $RiskyTools = [System.Collections.Generic.List[pscustomobject]]::new()
     $FailedPackageCount = 0
@@ -117,7 +120,7 @@ function Test-MPAIGOV1011 {
 
     if ($TenantWideMcpPackages.Count -gt 0 -and $FailedPackageCount -eq $TenantWideMcpPackages.Count) {
         Add-MtTestResultDetail -SkippedBecause Error -Result (
-            "Could not evaluate any of the $($TenantWideMcpPackages.Count) tenant-wide package(s) with an MCP " +
+            "Could not evaluate any of the $($TenantWideMcpPackages.Count) tenant-wide package(s) with an MCP or connector " +
             "server element -- every detail call or definition parse failed. See verbose logs for details."
         )
         return $null
@@ -125,7 +128,7 @@ function Test-MPAIGOV1011 {
 
     if ($RiskyTools.Count -eq 0) {
         $Result = "Well done. No MCP tool with a destructive or open-world effect was found in a tenant-wide " +
-            "package ($($TenantWideMcpPackages.Count) tenant-wide package(s) with an MCP server element checked)."
+            "package ($($TenantWideMcpPackages.Count) tenant-wide package(s) with an MCP server or agent connector element checked)."
         if ($FailedPackageCount -gt 0) {
             $Result += "`n`n$FailedPackageCount package(s) could not be evaluated (detail-read or parse error) " +
                 'and are not reflected in this result.'

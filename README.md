@@ -43,6 +43,13 @@ the installed pack -- see the comment in
 | MP.AIGOV.1026 | Enabled spending policy should alert at least two active recipients | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1027 | Group behind a spending policy should be a populated security group without nesting | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1033 | Copilot connectors users can search should only take content from apps you govern | Preview | Validated, Graph only |
+
+**Scope of the connector checks.** MP.AIGOV.1007, 1008, 1010, 1011 and 1016 only report on catalog
+packages users can reach: a package that is blocked (`isBlocked`) or allowed for no one
+(`availableTo = allowedForNone`) is skipped, and the result says how many were skipped. MP.AIGOV.1033
+does the same for synced Copilot connectors, covering only connections in the `ready` or
+`limitExceeded` state.
 
 See [`docs/pilot-and-open-questions.md`](docs/pilot-and-open-questions.md) for the full data-source
 and skip-condition rationale behind each test, and [`docs/coverage-matrix.md`](docs/coverage-matrix.md)
@@ -63,5 +70,6 @@ center until Microsoft exposes a resource-scoped type:
 | A resource policy has no per-agent limit set | An unlimited per-agent limit defeats the purpose of a resource-scoped cap. |
 | An agent is covered by more than one enabled resource policy | Overlapping resource policies don't combine — the highest per-agent/per-user limit wins, which can silently grant a higher effective limit than intended. |
 | An identity policy has "Auto-apply new services" turned on without review | Enabled by default tenant-wide (Message Center MC1470425, Sept 2026); newly released UBB services and agents automatically inherit policy coverage unless an admin reviews and disables it per policy. |
+| A synced Copilot connector is rolled out to everyone, or set so every user sees all content | Graph doesn't expose a connection's staged-rollout audience or its item access rules. Review under Copilot > Connectors > Your connections. |
 | AI Builder credits | Not covered by resource-based spending policies at all — see [Usage-based billing and cost management for Copilot Credits](https://learn.microsoft.com/copilot/implement/usage-based-billing-manage-copilot-studio-costs). |
 

@@ -7,6 +7,7 @@ BeforeAll {
     . "$PSScriptRoot/../pack/helpers/Test-AIGovCustomPackage.ps1"
     . "$PSScriptRoot/../pack/helpers/ConvertTo-AIGovUtcDate.ps1"
     . "$PSScriptRoot/../pack/helpers/Test-AIGovNotFoundError.ps1"
+    . "$PSScriptRoot/../pack/helpers/Test-AIGovPackageUserAccessible.ps1"
 }
 
 Describe 'Test-AIGovUnclearName' {
@@ -73,5 +74,24 @@ Describe 'Test-AIGovNotFoundError' {
         Test-AIGovNotFoundError -ErrorRecord ([System.Management.Automation.ErrorRecord]::new([System.Exception]::new('Response status code does not indicate success: 404 (Not Found).'), 'x', 'NotSpecified', $null)) | Should -BeTrue
         Test-AIGovNotFoundError -ErrorRecord ([System.Management.Automation.ErrorRecord]::new([System.Exception]::new('403 Forbidden'), 'x', 'NotSpecified', $null)) | Should -BeFalse
         Test-AIGovNotFoundError -ErrorRecord ([System.Management.Automation.ErrorRecord]::new([System.Exception]::new('Service unavailable'), 'x', 'NotSpecified', $null)) | Should -BeFalse
+    }
+}
+
+Describe 'Test-AIGovPackageUserAccessible' {
+    It 'treats <Label> as out of reach' -ForEach @(
+        @{ Label = 'a blocked package'; Package = [pscustomobject]@{ isBlocked = $true; availableTo = 'allowedForAll' } },
+        @{ Label = 'a blocked package (string flag)'; Package = [pscustomobject]@{ isBlocked = 'true'; availableTo = 'allowedForSome' } },
+        @{ Label = 'a package allowed for no one'; Package = [pscustomobject]@{ isBlocked = $false; availableTo = 'allowedForNone' } },
+        @{ Label = 'a null package'; Package = $null }
+    ) {
+        Test-AIGovPackageUserAccessible -Package $Package | Should -BeFalse
+    }
+
+    It 'treats <Label> as reachable' -ForEach @(
+        @{ Label = 'allowed for all'; Package = [pscustomobject]@{ isBlocked = $false; availableTo = 'allowedForAll' } },
+        @{ Label = 'allowed for some'; Package = [pscustomobject]@{ isBlocked = $false; availableTo = 'allowedForSome' } },
+        @{ Label = 'missing isBlocked and availableTo'; Package = [pscustomobject]@{ id = 'p1' } }
+    ) {
+        Test-AIGovPackageUserAccessible -Package $Package | Should -BeTrue
     }
 }

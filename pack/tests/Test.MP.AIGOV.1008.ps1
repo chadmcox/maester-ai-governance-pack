@@ -4,7 +4,7 @@ function Test-MPAIGOV1008 {
     Finds MCP server endpoints reachable over plain http:// instead of https://.
     .DESCRIPTION
     The per-package detail call, GET /copilot/admin/catalog/packages/{id}, returns an
-    elementDetails array. For packages whose list-level elementTypes includes 'MCPServers', the
+    elementDetails array. For packages whose list-level elementTypes includes 'MCPServers' or 'AgentConnectors', the
     elementDetails entry with elementType 'AgentConnectors' carries the MCP tool definitions: each
     element's definition field is a JSON string containing toolSource.remoteMcpServer.mcpServerUrl.
     Confirmed live (2026-11-06) against the test tenant: all 37 MCPServers-tagged packages exposed
@@ -40,7 +40,7 @@ function Test-MPAIGOV1008 {
         Write-Verbose 'Reading the Copilot package catalog for packages with MCP server elements.'
         $Packages = @(
             Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' `
-                -Select @('id', 'displayName', 'elementTypes')
+                -Select @('id', 'displayName', 'elementTypes', 'availableTo', 'isBlocked')
         )
     } catch {
         $ErrorRecord = $_
@@ -54,8 +54,15 @@ function Test-MPAIGOV1008 {
         return $null
     }
 
-    $McpPackages = @($Packages | Where-Object { $_.elementTypes -contains 'MCPServers' })
-    Write-Verbose "Found $($McpPackages.Count) package(s) with an MCP server element."
+    # 'AgentConnectors' too: some MCP-backed packages never list 'MCPServers' (found live 2026-11-10).
+    # Elements without toolSource.remoteMcpServer are skipped when the definitions are read below.
+    $AllMcpPackages = @($Packages | Where-Object { $_.elementTypes -contains 'MCPServers' -or $_.elementTypes -contains 'AgentConnectors' })
+    # Only packages users can reach are in scope: blocked packages and packages available to no one
+    # are skipped, and the count is reported so the totals still add up.
+    $McpPackages = @($AllMcpPackages | Where-Object { Test-AIGovPackageUserAccessible -Package $_ })
+    $UnreachableCount = $AllMcpPackages.Count - $McpPackages.Count
+    $ScopeNote = if ($UnreachableCount -gt 0) { " $UnreachableCount blocked or allowed-for-no-one package(s) skipped." } else { '' }
+    Write-Verbose "Found $($AllMcpPackages.Count) package(s) with an MCP server or agent connector element; $($McpPackages.Count) reachable by users."
 
     $InsecureUrls = [System.Collections.Generic.List[pscustomobject]]::new()
     $FailedPackageCount = 0
@@ -114,7 +121,7 @@ function Test-MPAIGOV1008 {
 
     if ($McpPackages.Count -gt 0 -and $FailedPackageCount -eq $McpPackages.Count) {
         Add-MtTestResultDetail -SkippedBecause Error -Result (
-            "Could not evaluate any of the $($McpPackages.Count) package(s) with an MCP server element " +
+            "Could not evaluate any of the $($McpPackages.Count) package(s) with an MCP server or agent connector element " +
             "-- every detail call or definition parse failed. See verbose logs for details."
         )
         return $null
@@ -122,7 +129,7 @@ function Test-MPAIGOV1008 {
 
     if ($InsecureUrls.Count -eq 0) {
         $Result = "Well done. No MCP server endpoint is reachable over plain HTTP " +
-            "($($McpPackages.Count) package(s) with an MCP server element checked)."
+            "($($McpPackages.Count) package(s) with an MCP server or agent connector element that users can reach checked).$ScopeNote"
         if ($FailedPackageCount -gt 0) {
             $Result += "`n`n$FailedPackageCount package(s) could not be evaluated (detail-read or parse error) " +
                 'and are not reflected in this result.'
@@ -132,6 +139,7 @@ function Test-MPAIGOV1008 {
     }
 
     $Result = "Found $($InsecureUrls.Count) MCP server endpoint(s) reachable over plain HTTP."
+    $Result += $ScopeNote
     if ($FailedPackageCount -gt 0) {
         $Result += " $FailedPackageCount package(s) could not be evaluated (detail-read or parse error) " +
             'and are not reflected below.'
