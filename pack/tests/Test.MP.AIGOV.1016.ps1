@@ -16,17 +16,20 @@ function Test-MPAIGOV1016 {
     AzureKeyVault, and ConnectionVault (developer preview) -- not the literal strings
     "anonymous"/"shared-secret" this test's spec used as shorthand. This test reports every
     distinct value actually seen in the tenant before classifying any of them, so an unexpected
-    value is visible rather than silently bucketed. Classification: None or a missing/unparseable
-    authorization.type is High (no authentication at all); ApiKeyPluginVault and AzureKeyVault are
+    value is visible rather than silently bucketed. Classification: the documented literal None is
+    High (the manifest declares anonymous access); a missing or empty authorization object is
+    Medium for a custom or external package (authentication isn't declared, so it needs a look) and
+    isn't reported for a Microsoft first-party package (Microsoft's own connectors, such as the
+    Dynamics 365 ones on agent365.svc.cloud.microsoft, carry no authorization block and are
+    authenticated by the platform); ApiKeyPluginVault and AzureKeyVault are
     Medium (a static secret/key rather than a token-issuing identity flow -- AzureKeyVault still
     ultimately authenticates with a stored secret, it is only the secret's storage that differs);
     OAuthPluginVault and DynamicClientRegistration are a pass (an Entra/OAuth identity flow);
     ConnectionVault (developer preview) is treated as Medium pending broader documentation, the
     same conservative treatment as AzureKeyVault. An entirely missing or unparseable authorization
     object -- as opposed to a well-formed authorization object whose type is the documented literal
-    "None" -- is reported separately as "Unspecified" rather than folded into the "None" bucket:
-    both drive the same High severity outcome (neither represents an enforced identity flow), but
-    an admin reviewing the observed-values list should be able to tell a deliberately anonymous MCP
+    "None" -- is reported separately as "Unspecified" rather than folded into the "None" bucket,
+    because a missing block isn't proof the server is anonymous, and an admin reviewing the observed-values list should be able to tell a deliberately anonymous MCP
     server from one whose manifest is missing or malformed. Either Medium or High finding is reported as
     worse when the package is tenant-wide, using the same availableTo/deployedTo signal as
     MP.AIGOV.1007/1011. Only the MCP server's scheme and host are ever reported -- never the full
@@ -65,7 +68,7 @@ function Test-MPAIGOV1016 {
     # "None" value so the observed-values summary doesn't conflate the two.
     $WeakAuthTypes = @{
         'None'              = 'High'
-        'Unspecified'       = 'High'
+        'Unspecified'       = 'Medium'
         'ApiKeyPluginVault' = 'Medium'
         'AzureKeyVault'     = 'Medium'
         'ConnectionVault'   = 'Medium'
@@ -75,7 +78,7 @@ function Test-MPAIGOV1016 {
         Write-Verbose 'Reading the Copilot package catalog for packages with MCP server elements.'
         $Packages = @(
             Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' `
-                -Select @('id', 'displayName', 'elementTypes', 'availableTo', 'deployedTo', 'isBlocked')
+                -Select @('id', 'displayName', 'type', 'publisher', 'elementTypes', 'availableTo', 'deployedTo', 'isBlocked')
         )
     } catch {
         $ErrorRecord = $_
@@ -153,7 +156,10 @@ function Test-MPAIGOV1016 {
                     }
                 }
 
-                if ($WeakAuthTypes.ContainsKey($AuthType)) {
+                # Missing authorization on a Microsoft first-party package is the platform's own
+                # authentication, not an anonymous server, so it isn't a finding.
+                $FirstPartyUnspecified = $AuthType -eq 'Unspecified' -and -not (Test-AIGovCustomPackage -Package $Package)
+                if ($WeakAuthTypes.ContainsKey($AuthType) -and -not $FirstPartyUnspecified) {
                     $WeakAuth.Add([pscustomobject]@{
                         PackageId    = $PackageId
                         DisplayName  = [string]$Package.displayName

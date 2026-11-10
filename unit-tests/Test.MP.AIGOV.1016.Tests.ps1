@@ -1,6 +1,7 @@
 BeforeAll {
     . "$PSScriptRoot/../pack/helpers/Get-AIGovPackageCatalogSkipMessage.ps1"
     . "$PSScriptRoot/../pack/helpers/Test-AIGovPackageUserAccessible.ps1"
+    . "$PSScriptRoot/../pack/helpers/Test-AIGovCustomPackage.ps1"
     . "$PSScriptRoot/../pack/tests/Test.MP.AIGOV.1016.ps1"
 }
 
@@ -55,7 +56,7 @@ Describe 'Test-MPAIGOV1016' {
         $result | Should -Be $true
     }
 
-    It 'fails High on a missing/unspecified authorization.type, reported distinctly from None' {
+    It 'fails High on None, and reports a missing authorization.type on a custom package distinctly as Unspecified' {
         Mock Invoke-MtGraphRequest -ParameterFilter { $RelativeUri -eq 'copilot/admin/catalog/packages' } {
             @(
                 [pscustomobject]@{ id = 'pkg-1'; displayName = 'Anonymous MCP'; elementTypes = @('MCPServers'); availableTo = 'allowedForAll'; deployedTo = 'acquiredForAll' }
@@ -114,6 +115,54 @@ Describe 'Test-MPAIGOV1016' {
             $Result -match 'pkg-1' -and
             $Result -match 'pkg-2'
         }
+    }
+
+    It 'fails Medium, not High, when the only finding is a custom package with no authorization block' {
+        Mock Invoke-MtGraphRequest -ParameterFilter { $RelativeUri -eq 'copilot/admin/catalog/packages' } {
+            @(
+                [pscustomobject]@{ id = 'pkg-1'; displayName = 'Vendor MCP'; type = 'thirdParty'; elementTypes = @('MCPServers'); availableTo = 'allowedForSome'; deployedTo = 'acquiredForSome' }
+            )
+        }
+        Mock Invoke-MtGraphRequest -ParameterFilter { $RelativeUri -eq 'copilot/admin/catalog/packages/pkg-1' } {
+            [pscustomobject]@{ elementDetails = @([pscustomobject]@{ elementType = 'AgentConnectors'; elements = @(
+                [pscustomobject]@{ definition = (@{ toolSource = @{ remoteMcpServer = @{ mcpServerUrl = 'https://mcp.vendor.example/mcp' } } } | ConvertTo-Json -Depth 10) }
+            ) }) }
+        }
+
+        Test-MPAIGOV1016 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Severity -eq 'Medium' -and $Result -match 'Unspecified' }
+    }
+
+    It 'passes when a Microsoft first-party package has no authorization block (platform-authenticated)' {
+        Mock Invoke-MtGraphRequest -ParameterFilter { $RelativeUri -eq 'copilot/admin/catalog/packages' } {
+            @(
+                [pscustomobject]@{ id = 'pkg-1'; displayName = 'Sales'; type = 'firstParty'; publisher = 'Microsoft Corporation'; elementTypes = @('MCPServers'); availableTo = 'allowedForAll'; deployedTo = 'acquiredForAll' }
+            )
+        }
+        Mock Invoke-MtGraphRequest -ParameterFilter { $RelativeUri -eq 'copilot/admin/catalog/packages/pkg-1' } {
+            [pscustomobject]@{ elementDetails = @([pscustomobject]@{ elementType = 'AgentConnectors'; elements = @(
+                [pscustomobject]@{ definition = (@{ toolSource = @{ remoteMcpServer = @{ mcpServerUrl = 'https://agent365.svc.cloud.microsoft/mcp' } } } | ConvertTo-Json -Depth 10) }
+            ) }) }
+        }
+
+        Test-MPAIGOV1016 | Should -Be $true
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match 'Well done' -and $Result -match 'Unspecified' }
+    }
+
+    It 'still fails High when a Microsoft first-party package explicitly declares None' {
+        Mock Invoke-MtGraphRequest -ParameterFilter { $RelativeUri -eq 'copilot/admin/catalog/packages' } {
+            @(
+                [pscustomobject]@{ id = 'pkg-1'; displayName = 'MS anon'; type = 'firstParty'; elementTypes = @('MCPServers'); availableTo = 'allowedForSome'; deployedTo = 'acquiredForSome' }
+            )
+        }
+        Mock Invoke-MtGraphRequest -ParameterFilter { $RelativeUri -eq 'copilot/admin/catalog/packages/pkg-1' } {
+            [pscustomobject]@{ elementDetails = @([pscustomobject]@{ elementType = 'AgentConnectors'; elements = @(
+                [pscustomobject]@{ definition = (@{ toolSource = @{ remoteMcpServer = @{ mcpServerUrl = 'https://x.microsoft.com/mcp'; authorization = @{ type = 'None' } } } } | ConvertTo-Json -Depth 10) }
+            ) }) }
+        }
+
+        Test-MPAIGOV1016 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Severity -eq 'High' }
     }
 
     It 'skips with Error when every MCP package detail call fails' {
