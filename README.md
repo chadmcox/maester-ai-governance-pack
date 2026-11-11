@@ -1,4 +1,4 @@
-# AI Governance
+# Copilot AI Governance
 
 A [Maester Pack](https://maester.dev/docs/packs). Install it with:
 
