@@ -4,7 +4,8 @@ function Test-MPAIGOV1020 {
     Finds custom or external agents and tools in the Copilot catalog that nobody uses.
     .DESCRIPTION
     Rule from chadmcox/Copilot "Agent and Tools Health Check": a custom or external agent or tool (not an
-    App-kind package such as an Office add-in) is unused when it isn't blocked, has no active users in the
+    App-kind package such as an Office add-in) is unused when people can reach it (not blocked, and not
+    available to no one: Test-AIGovPackageUserAccessible), has no active users in the
     last 30 days (activeUsers), was last used more than StaleDays ago or never (lastUsedDateTime), and hasn't
     been modified in StaleDays (lastModifiedDateTime). Usage fields come from the per-package detail call, so
     each custom package needs its own request. Microsoft-published packages aren't checked.
@@ -44,7 +45,7 @@ function Test-MPAIGOV1020 {
         Write-Verbose 'Reading the Copilot package catalog.'
         $Packages = @(
             Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' `
-                -Select @('id', 'displayName', 'type', 'publisher', 'elementTypes', 'isBlocked', 'lastModifiedDateTime')
+                -Select @('id', 'displayName', 'type', 'publisher', 'elementTypes', 'isBlocked', 'availableTo', 'lastModifiedDateTime')
         )
     } catch {
         $ErrorRecord = $_
@@ -61,13 +62,13 @@ function Test-MPAIGOV1020 {
     $Cutoff = [datetime]::UtcNow.AddDays(-$StaleDays)
     $Candidates = @($Packages | Where-Object {
             $_ -and -not [string]::IsNullOrWhiteSpace([string]$_.id) -and
-            -not [bool]$_.isBlocked -and
+            (Test-AIGovPackageUserAccessible -Package $_) -and
             (Get-AIGovPackageKind -ElementTypes $_.elementTypes) -ne 'App' -and
             (Test-AIGovCustomPackage -Package $_)
         })
 
     if ($Candidates.Count -eq 0) {
-        Add-MtTestResultDetail -Result 'Well done. There are no unblocked custom or external agents or tools in the Copilot catalog to check.'
+        Add-MtTestResultDetail -Result 'Well done. There are no custom or external agents or tools that people can reach in the Copilot catalog to check.'
         return $true
     }
 
@@ -109,7 +110,7 @@ function Test-MPAIGOV1020 {
     }
 
     if ($Unused.Count -eq 0) {
-        Add-MtTestResultDetail -Result "Well done. Every unblocked custom agent or tool ($($Candidates.Count)) was used or changed in the last $StaleDays days.$UnreadText"
+        Add-MtTestResultDetail -Result "Well done. Every custom agent or tool people can reach ($($Candidates.Count)) was used or changed in the last $StaleDays days.$UnreadText"
         return $true
     }
 

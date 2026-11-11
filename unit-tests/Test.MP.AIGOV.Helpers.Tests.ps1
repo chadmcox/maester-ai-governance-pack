@@ -5,6 +5,7 @@ BeforeAll {
     . "$PSScriptRoot/../pack/helpers/Test-AIGovPoorDescription.ps1"
     . "$PSScriptRoot/../pack/helpers/Get-AIGovPackageKind.ps1"
     . "$PSScriptRoot/../pack/helpers/Test-AIGovCustomPackage.ps1"
+    . "$PSScriptRoot/../pack/helpers/Test-AIGovTenantPackage.ps1"
     . "$PSScriptRoot/../pack/helpers/ConvertTo-AIGovUtcDate.ps1"
     . "$PSScriptRoot/../pack/helpers/Test-AIGovNotFoundError.ps1"
     . "$PSScriptRoot/../pack/helpers/Test-AIGovPackageUserAccessible.ps1"
@@ -41,9 +42,27 @@ Describe 'Get-AIGovPackageKind' {
     It 'classifies <Types> as <Kind>' -ForEach @(
         @{ Types = @('DeclarativeAgent'); Kind = 'Agent' }, @{ Types = @('Bots', 'Tabs'); Kind = 'Agent' },
         @{ Types = @('MCPServers'); Kind = 'Tool' }, @{ Types = @('AgentSkills'); Kind = 'Tool' }, @{ Types = @('AgentConnectors'); Kind = 'Tool' },
-        @{ Types = @('OfficeAddIns'); Kind = 'App' }, @{ Types = @(); Kind = 'App' }
+        @{ Types = @('OfficeAddIns'); Kind = 'App' }, @{ Types = @(); Kind = 'App' },
+        @{ Types = @('DeclarativeCopilots'); Kind = 'Agent' }, @{ Types = @('DeclarativeCopilots', 'StaticTabs'); Kind = 'Agent' },
+        @{ Types = @('AgentMetadatas'); Kind = 'Agent' }, @{ Types = @('SuperAppAgent'); Kind = 'Agent' },
+        @{ Types = @('DeclarativeCopilots', 'AgentConnectors', 'MCPServers'); Kind = 'Tool' },
+        @{ Types = @('ComposeExtensions', 'StaticTabs'); Kind = 'App' }
     ) {
         Get-AIGovPackageKind -ElementTypes $Types | Should -Be $Kind
+    }
+}
+
+Describe 'Test-AIGovTenantPackage' {
+    It 'treats Microsoft and third-party packages as not built in the tenant' {
+        Test-AIGovTenantPackage -Package ([pscustomobject]@{ type = 'firstParty' }) | Should -BeFalse
+        Test-AIGovTenantPackage -Package ([pscustomobject]@{ type = 'thirdParty' }) | Should -BeFalse
+        Test-AIGovTenantPackage -Package ([pscustomobject]@{ type = 'external' }) | Should -BeFalse
+        Test-AIGovTenantPackage -Package ([pscustomobject]@{ type = 'shared' }) | Should -BeTrue
+        Test-AIGovTenantPackage -Package ([pscustomobject]@{ type = 'lineOfBusiness' }) | Should -BeTrue
+    }
+    It 'falls back to the publisher when type is missing' {
+        Test-AIGovTenantPackage -Package ([pscustomobject]@{ publisher = 'Microsoft Corporation' }) | Should -BeFalse
+        Test-AIGovTenantPackage -Package ([pscustomobject]@{ publisher = 'Contoso' }) | Should -BeTrue
     }
 }
 

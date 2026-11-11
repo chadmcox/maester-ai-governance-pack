@@ -20,7 +20,7 @@ the installed pack -- see the comment in
 | MP.AIGOV.1003 | Agent is assigned directly to users instead of via a group | Preview | Validated, Graph only |
 | MP.AIGOV.1004 | Agent identity, blueprint, or blueprint principal has exactly one sponsor and zero owners | Preview | Validated, Graph only |
 | MP.AIGOV.1005 | Classic Copilot Studio service principal has no corresponding Agent ID registration | Preview | Validated, Graph only |
-| MP.AIGOV.1006 | Agent display name or description is empty or a placeholder value | Preview | Validated, Graph only |
+| MP.AIGOV.1006 | Agent display name or description is empty or a placeholder value | Preview | Revised, re-validation pending, Graph only |
 | MP.AIGOV.1007 | Custom or external package is available or deployed tenant-wide | Preview | Validated, Graph only |
 | MP.AIGOV.1008 | MCP server endpoint should not be reachable over plain HTTP | Preview | Validated, Graph only |
 | MP.AIGOV.1009 | Agent Identity Blueprint credential should not be nearing expiration | Preview | Validated, Graph only |
@@ -34,7 +34,7 @@ the installed pack -- see the comment in
 | MP.AIGOV.1017 | Conditional Access should cover agent identities | Preview | Validated, Graph only |
 | MP.AIGOV.1018 | Agent identity currently at risk should be remediated or dismissed | Preview | Validated, Graph only |
 | MP.AIGOV.1019 | Agent identity should not have user-consented delegated permissions | Preview | Validated, Graph only |
-| MP.AIGOV.1020 | Custom agent or tool that nobody uses should be blocked or removed | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1020 | Custom agent or tool that nobody uses should be blocked or removed | Preview | Revised, re-validation pending, Graph only |
 | MP.AIGOV.1021 | Group an agent or tool is assigned to should exist, have two owners and a description | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1022 | Agent identity should not hold broad Microsoft Graph write permissions | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1023 | Agent identity and blueprint should have a clear name and description | Preview | Not yet validated, Graph only |

@@ -7,10 +7,11 @@ BeforeAll {
     . "$PSScriptRoot/../pack/helpers/ConvertTo-AIGovUtcDate.ps1"
     . "$PSScriptRoot/../pack/helpers/Get-AIGovPackageKind.ps1"
     . "$PSScriptRoot/../pack/helpers/Test-AIGovCustomPackage.ps1"
+    . "$PSScriptRoot/../pack/helpers/Test-AIGovPackageUserAccessible.ps1"
     . "$PSScriptRoot/../pack/tests/Test.MP.AIGOV.1020.ps1"
 
-    function New-Package([string]$Id, [string]$Type = 'thirdParty', [string[]]$Elements = @('DeclarativeAgent'), [bool]$Blocked = $false) {
-        [pscustomobject]@{ id = $Id; displayName = "Agent $Id name"; type = $Type; elementTypes = $Elements; isBlocked = $Blocked; lastModifiedDateTime = [datetime]::UtcNow.AddDays(-400).ToString('o') }
+    function New-Package([string]$Id, [string]$Type = 'thirdParty', [string[]]$Elements = @('DeclarativeAgent'), [bool]$Blocked = $false, [string]$AvailableTo = 'allowedForSome') {
+        [pscustomobject]@{ id = $Id; displayName = "Agent $Id name"; type = $Type; elementTypes = $Elements; isBlocked = $Blocked; availableTo = $AvailableTo; lastModifiedDateTime = [datetime]::UtcNow.AddDays(-400).ToString('o') }
     }
     function New-Detail([int]$Active = 0, [object]$LastUsedDaysAgo = $null, [int]$ModifiedDaysAgo = 400) {
         [pscustomobject]@{
@@ -43,10 +44,11 @@ Describe 'Test-MPAIGOV1020' {
         Test-MPAIGOV1020 | Should -BeTrue
     }
 
-    It 'ignores Microsoft, blocked and App-kind packages without reading their details' {
+    It 'ignores Microsoft, blocked, available-to-no-one and App-kind packages without reading their details' {
         Set-AIGovGraphRoute @(
             , @('^copilot/admin/catalog/packages$', @(
-                    (New-Package 'ms' -Type 'firstParty'), (New-Package 'blk' -Blocked $true), (New-Package 'app' -Elements @('OfficeAddIns'))))
+                    (New-Package 'ms' -Type 'firstParty'), (New-Package 'blk' -Blocked $true), (New-Package 'app' -Elements @('OfficeAddIns')),
+                    (New-Package 'none' -AvailableTo 'allowedForNone')))
         )
         Test-MPAIGOV1020 | Should -BeTrue
         Should -Invoke Invoke-MtGraphRequest -Times 1 -Exactly
