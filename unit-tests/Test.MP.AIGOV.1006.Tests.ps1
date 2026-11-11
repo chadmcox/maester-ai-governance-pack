@@ -17,6 +17,8 @@
 
 BeforeAll {
     . "$PSScriptRoot/../pack/helpers/Get-AIGovPackageCatalogSkipMessage.ps1"
+    . "$PSScriptRoot/../pack/helpers/Test-AIGovCustomPackage.ps1"
+    . "$PSScriptRoot/../pack/helpers/Test-AIGovTenantPackage.ps1"
     . "$PSScriptRoot/../pack/tests/Test.MP.AIGOV.1006.ps1"
 }
 
@@ -51,6 +53,23 @@ Describe 'Test-MPAIGOV1006' {
         $Result | Should -BeFalse
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
             $Result -match 'pkg-2' -and $Result -match 'pkg-3' -and $Severity -eq 'Info'
+        }
+    }
+
+    It 'ignores Microsoft and third-party packages, whose names are the publisher''s' {
+        Mock Invoke-MtGraphRequest {
+            @(
+                [pscustomobject]@{ id = 'ms'; displayName = 'Test Agent'; type = 'firstParty'; shortDescription = ''; longDescription = '' },
+                [pscustomobject]@{ id = 'vendor'; displayName = 'Demo'; type = 'thirdParty'; shortDescription = ''; longDescription = '' },
+                [pscustomobject]@{ id = 'ours'; displayName = 'Draft agent'; type = 'shared'; shortDescription = ''; longDescription = '' }
+            )
+        }
+
+        $Result = Test-MPAIGOV1006
+
+        $Result | Should -BeFalse
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Result -match 'ours' -and $Result -notmatch '\| ms \|' -and $Result -notmatch 'vendor'
         }
     }
 

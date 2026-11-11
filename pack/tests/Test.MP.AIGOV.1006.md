@@ -6,7 +6,11 @@
 > was fixed to select and check both fields (empty counts only if both are blank), then re-run and
 > correctly **Failed** (true positive), finding 3 real packages with an empty description.
 
-Checks whether an agent's display name or description is empty, or whether the display name matches
+> **Revised** 2026-11-11: now checks only packages built in this tenant (`type` not firstParty,
+> microsoft, thirdParty or external). A live run flagged vendor catalog entries such as "Box" and
+> "Coachello", whose names and descriptions only the vendor can change. Re-validation pending.
+
+Checks whether an agent built in this tenant has an empty display name or description, or whether the display name matches
 a placeholder pattern (test, demo, copy, draft, untitled, and similar). Without a clear name and
 description, reviewers and users have nothing to judge the agent's purpose by.
 

@@ -14,7 +14,8 @@ function Test-MPAIGOV1007 {
     allowlist (Microsoft Corporation, Microsoft, Microsoft 365, Microsoft Copilot Studio) as a
     secondary signal only. Office add-ins and tabs
     ("App"-kind packages, matched the same way as Get-PackageKind in that script: elementTypes without
-    declarativeAgent/customEngine/bot/skill/connector/mcp/plugin/action) are out of scope and excluded
+    declarativeAgent/declarativeCopilot/customEngine/bot/agentMetadata/superAppAgent/agenticUserTemplate/
+    skill/connector/mcp/plugin/action) are out of scope and excluded
     before the custom/external check runs. Flags any remaining non-Microsoft-published package where
     availableTo indicates allowedForAll or deployedTo indicates acquiredForAll: a custom or external
     agent or tool should go through deliberate, scoped rollout, not everyone-by-default. Reading this
@@ -69,7 +70,9 @@ function Test-MPAIGOV1007 {
         # whose elementTypes don't look like an agent or a tool is an "App" (Office add-in/tab) and is
         # out of scope for this check.
         $ElementTypeText = @($Package.elementTypes) -join ' '
-        $IsAgentOrTool = $ElementTypeText -match '(?i)declarativeAgent|customEngine|bot|skill|connector|mcp|plugin|action'
+        # The catalog reports declarative agents as DeclarativeCopilots and Copilot Studio agents shared in the
+        # tenant as AgentMetadatas; without these, an agent shared with everyone was skipped as an App.
+        $IsAgentOrTool = $ElementTypeText -match '(?i)declarativeAgent|declarativeCopilot|customEngine|bot|agentMetadata|superAppAgent|agenticUserTemplate|skill|connector|mcp|plugin|action'
         if (-not $IsAgentOrTool) { continue }
 
         $Type = [string]$Package.type

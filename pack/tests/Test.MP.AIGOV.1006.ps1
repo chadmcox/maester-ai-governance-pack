@@ -1,10 +1,12 @@
 function Test-MPAIGOV1006 {
     <#
     .SYNOPSIS
-    Finds agents with an empty or placeholder display name or description.
+    Finds agents built in this tenant with an empty or placeholder display name or description.
     .DESCRIPTION
     An agent with no description, or an obvious placeholder name (test, demo, copy, draft, untitled,
-    and similar), gives reviewers nothing to judge its purpose by. Reading this endpoint may require
+    and similar), gives reviewers nothing to judge its purpose by. Only packages built in this tenant are
+    checked (Test-AIGovTenantPackage): Microsoft's and third-party vendors' names and descriptions are
+    theirs to fix, and flagging them filled a live tenant's results with catalog entries it couldn't change. Reading this endpoint may require
     a Microsoft Agent 365 license depending on tenant -- validated 2026-11-05 against an F7-licensed
     test tenant where CopilotPackages.Read.All alone was sufficient.
     .EXAMPLE
@@ -34,7 +36,7 @@ function Test-MPAIGOV1006 {
 
     try {
         Write-Verbose 'Reading the Copilot package catalog for empty or placeholder names and descriptions.'
-        $Packages = @(Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' -Select @('id', 'displayName', 'shortDescription', 'longDescription'))
+        $Packages = @(Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'copilot/admin/catalog/packages' -Select @('id', 'displayName', 'type', 'publisher', 'shortDescription', 'longDescription'))
     } catch {
         $ErrorRecord = $_
     }
@@ -50,7 +52,7 @@ function Test-MPAIGOV1006 {
     $NamePattern = ($PlaceholderNamePattern -join '|')
 
     $Unclear = [System.Collections.Generic.List[pscustomobject]]::new()
-    foreach ($Package in $Packages) {
+    foreach ($Package in @($Packages | Where-Object { $_ -and (Test-AIGovTenantPackage -Package $_) })) {
         $DisplayName = [string]$Package.displayName
         $ShortDescription = [string]$Package.shortDescription
         $LongDescription = [string]$Package.longDescription
@@ -76,12 +78,12 @@ function Test-MPAIGOV1006 {
 
     if ($Unclear.Count -eq 0) {
         Add-MtTestResultDetail -Result (
-            'Well done. Every agent has a clear display name and a description.'
+            'Well done. Every agent built in this tenant has a clear display name and a description.'
         )
         return $true
     }
 
-    $Result = "Found $($Unclear.Count) agent(s) with an empty or placeholder display name or description."
+    $Result = "Found $($Unclear.Count) agent(s) built in this tenant with an empty or placeholder display name or description."
     $Result += "`n`n| Package ID | Display name | Reason |"
     $Result += "`n| --- | --- | --- |"
     foreach ($Item in $Unclear) {

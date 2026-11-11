@@ -4,7 +4,11 @@
 > modified in over 180 days. The package-detail `activeUsers` and `lastUsedDateTime` properties read and
 > typed as expected.
 
-Finds custom or external agents and tools in the Copilot catalog that nobody uses: not blocked, no active
+> **Revised** 2026-11-11: now checks only packages people can reach (not blocked, and `availableTo` not
+> allowedForNone). "Vani" from the validation run was available to no one, so there was nothing to block;
+> it no longer fires. Re-validation pending.
+
+Finds custom or external agents and tools in the Copilot catalog that nobody uses: people can reach them, no active
 users in the last 30 days, last used more than `StaleDays` ago (or never), and not changed in `StaleDays`.
 `StaleDays` defaults to 180, matching Maester's own dormancy tests; 90 is a stricter option.
 Microsoft-published packages and App-kind packages (Office add-ins, tabs) aren't checked.
