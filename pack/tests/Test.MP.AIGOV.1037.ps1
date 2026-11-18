@@ -10,7 +10,7 @@ function Test-MPAIGOV1037 {
         AgentsInfo
         | summarize arg_max(Timestamp, *) by AgentId
         | where LifecycleStatus != "Deleted"
-        | project AgentId, AgentName, Platform, EntraAgentId, EntraBlueprintId
+        | project AgentId, AgentName = Name, Platform, EntraAgentId = EntraAgentID, EntraBlueprintId = EntraBlueprintID
 
     A cloud agent fails when both EntraAgentId and EntraBlueprintId are empty: Defender sees it, but
     it has no Entra agent identity, blueprint or enterprise application to govern with Conditional
@@ -53,7 +53,7 @@ function Test-MPAIGOV1037 {
 AgentsInfo
 | summarize arg_max(Timestamp, *) by AgentId
 | where LifecycleStatus != "Deleted"
-| project AgentId, AgentName, Platform, EntraAgentId, EntraBlueprintId
+| project AgentId, AgentName = Name, Platform, EntraAgentId = EntraAgentID, EntraBlueprintId = EntraBlueprintID
 '@
 
     try {
@@ -65,7 +65,7 @@ AgentsInfo
             Add-MtTestResultDetail -SkippedBecause NotAuthorized -Result (
                 "Couldn't run the advanced hunting query (403). Confirm the ThreatHunting.Read.All permission before re-running this check."
             )
-        } elseif ($Message -match '(?i)AgentsInfo|failed to resolve|semantic error|table') {
+        } elseif ($Message -match '(?i)failed to resolve table' -and $Message -match "['""]AgentsInfo['""]") {
             Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
                 "The AgentsInfo advanced hunting table isn't available in this tenant. It needs Microsoft Defender XDR with Microsoft Agent 365."
             )

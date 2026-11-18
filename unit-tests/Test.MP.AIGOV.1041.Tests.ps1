@@ -24,14 +24,39 @@ Describe 'Test-MPAIGOV1041' {
         Test-MPAIGOV1041 | Should -Be $true
     }
 
-    It 'fails Medium for a foreign blueprint with no verified publisher' {
+    It 'fails Medium for an unverified foreign blueprint when the response demonstrates publisher data is available' {
         Set-AIGovGraphRoute @(
             , @('^organization$', @(@{ id = $Tenant }))
             , @('agentIdentityBlueprintPrincipal', @(
+                    @{ id = 's2'; appOwnerOrganizationId = $Tenant; verifiedPublisher = @{ verifiedPublisherId = '123' } }
                     @{ id = 's3'; displayName = 'Unknown vendor'; appId = 'a3'; appOwnerOrganizationId = 'vendor-tenant'; verifiedPublisher = @{ verifiedPublisherId = $null } }
                 ))
         )
         Test-MPAIGOV1041 | Should -Be $false
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Severity -eq 'Medium' -and $Result -match 'Unknown vendor \| a3 \| vendor-tenant' }
+    }
+
+    It 'skips when every publisher ID is empty, as in the live derived-type response' {
+        Set-AIGovGraphRoute @(
+            , @('^organization$', @(@{ id = $Tenant }))
+            , @('agentIdentityBlueprintPrincipal', @(
+                    @{ id = 's3'; appOwnerOrganizationId = 'vendor-tenant'; verifiedPublisher = @{ displayName = $null; verifiedPublisherId = $null; addedDateTime = $null } }
+                ))
+        )
+        Test-MPAIGOV1041 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'verifiedPublisher'
+        }
+    }
+
+    It 'skips with a schema reason when selecting verifiedPublisher is unsupported' {
+        Set-AIGovGraphRoute @(
+            , @('^organization$', @(@{ id = $Tenant }))
+            , @('agentIdentityBlueprintPrincipal', "throw:400 BadRequest: Could not find a property named 'verifiedPublisher'.")
+        )
+        Test-MPAIGOV1041 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'verifiedPublisher'
+        }
     }
 }

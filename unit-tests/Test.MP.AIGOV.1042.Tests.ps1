@@ -19,6 +19,17 @@ Describe 'Test-MPAIGOV1042' {
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match 'Web mode' }
     }
 
+    It 'preserves the singleton policy value instead of letting the paged helper unwrap it' {
+        Mock Invoke-MtGraphRequest {
+            if ($DisablePaging) {
+                return @{ id = 'microsoft.copilot.allowwebsearch'; value = '1'; policyId = 'policy-1' }
+            }
+            '1'
+        }
+        Test-MPAIGOV1042 | Should -Be $true
+        Should -Invoke Invoke-MtGraphRequest -Times 1 -ParameterFilter { $DisablePaging -and $DisableCache }
+    }
+
     It 'fails Low when no tenant policy sets it' {
         Set-AIGovGraphRoute @(, @('allowwebsearch', @{ value = $null; policyId = $null }))
         Test-MPAIGOV1042 | Should -Be $false

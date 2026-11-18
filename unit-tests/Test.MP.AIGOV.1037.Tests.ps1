@@ -34,6 +34,22 @@ Describe 'Test-MPAIGOV1037' {
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'Agent 365' }
     }
 
+    It 'projects the case-sensitive live AgentsInfo column names into the result fields' {
+        Mock Invoke-MtGraphSecurityQuery { @() }
+        Test-MPAIGOV1037 | Should -Be $true
+        Should -Invoke Invoke-MtGraphSecurityQuery -Times 1 -ParameterFilter {
+            $Query -cmatch 'AgentName\s*=\s*Name' -and
+            $Query -cmatch 'EntraAgentId\s*=\s*EntraAgentID' -and
+            $Query -cmatch 'EntraBlueprintId\s*=\s*EntraBlueprintID'
+        }
+    }
+
+    It 'reports a query schema error instead of claiming the table or license is missing' {
+        Mock Invoke-MtGraphSecurityQuery { throw "'project' operator: Failed to resolve scalar expression named 'AgentName'." }
+        Test-MPAIGOV1037 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'Error' -and $null -ne $SkippedError }
+    }
+
     It 'skips NotAuthorized on 403' {
         Mock Invoke-MtGraphSecurityQuery { throw '403 Forbidden' }
         Test-MPAIGOV1037 | Should -BeNullOrEmpty

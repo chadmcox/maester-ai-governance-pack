@@ -9,8 +9,8 @@ function Get-AIGovMcpTool {
     read. Each tool row carries PackageId, PackageName, ServerUrl, ToolName, Description,
     InputSchema, Annotations and Failed = $false.
 
-    A package whose detail call fails, or whose definition can't be parsed, yields one row with
-    Failed = $true and no tool, so the caller can count what it couldn't evaluate.
+    A package whose detail call fails, whose definition can't be parsed, or whose remote server
+    has no tool definitions yields a row with Failed = $true, so missing metadata is not a pass.
     .EXAMPLE
     $Packages | Get-AIGovMcpTool | Where-Object { -not $_.Failed }
     #>
@@ -46,6 +46,12 @@ function Get-AIGovMcpTool {
             } catch {
                 Write-Verbose "Could not parse an AgentConnectors definition for package $PackageId`: $_"
                 $Package | Select-Object @{ n = 'PackageId'; e = { $PackageId } }, @{ n = 'PackageName'; e = { $PackageName } }, @{ n = 'Failed'; e = { $true } }
+                continue
+            }
+
+            if ($null -ne $Server -and $null -eq $Server.mcpToolDescription.tools) {
+                $Package | Select-Object @{ n = 'PackageId'; e = { $PackageId } }, @{ n = 'PackageName'; e = { $PackageName } },
+                    @{ n = 'Failed'; e = { $true } }, @{ n = 'FailureReason'; e = { 'ToolDefinitionsUnavailable' } }
                 continue
             }
 

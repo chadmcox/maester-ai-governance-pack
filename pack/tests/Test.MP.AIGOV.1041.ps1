@@ -48,13 +48,27 @@ function Test-MPAIGOV1041 {
                 -Select @('id', 'displayName', 'appId', 'appOwnerOrganizationId', 'verifiedPublisher')
         )
     } catch {
-        if ($_.Exception.Message -match '(?i)403|forbidden|authorization') {
+        $Message = "$($_.Exception.Message) $($_.ErrorDetails.Message)"
+        if ($Message -match '(?i)403|forbidden|authorization') {
             Add-MtTestResultDetail -SkippedBecause NotAuthorized -Result (
                 "Couldn't read blueprint principals (403). Confirm the Application.Read.All permission before re-running this check."
+            )
+        } elseif ($Message -match '(?i)verifiedPublisher' -and $Message -match '(?i)400|badrequest|property') {
+            Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+                'The agentIdentityBlueprintPrincipal API does not support selecting verifiedPublisher in this tenant. ' +
+                'Publisher verification cannot be established from this response.'
             )
         } else {
             Add-MtTestResultDetail -SkippedBecause Error -SkippedError $_
         }
+        return $null
+    }
+
+    if ($Principals.Count -gt 0 -and @($Principals | Where-Object { $_.verifiedPublisher.verifiedPublisherId }).Count -eq 0) {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+            "None of the $($Principals.Count) blueprint principal(s) returns a populated verifiedPublisher ID. " +
+            'This response cannot distinguish unverified publishers from unavailable publisher metadata; review publisher verification manually.'
+        )
         return $null
     }
 

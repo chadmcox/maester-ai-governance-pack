@@ -75,6 +75,14 @@ function Test-MPAIGOV1039 {
     $FailedCount = @($ToolRows | Where-Object { $_.Failed } | Select-Object -ExpandProperty PackageId -Unique).Count
     $Tools = @($ToolRows | Where-Object { -not $_.Failed })
 
+    if ($ToolRows.FailureReason -contains 'ToolDefinitionsUnavailable') {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+            'MCP tool definitions are unavailable for one or more reachable packages in the catalog response. ' +
+            'Descriptions and annotations cannot be reviewed from a server URL alone. This check does not connect to MCP servers.'
+        )
+        return $null
+    }
+
     if ($McpPackages.Count -gt 0 -and $FailedCount -eq $McpPackages.Count) {
         Add-MtTestResultDetail -SkippedBecause Error -Result "Couldn't read or parse any of the $($McpPackages.Count) package(s) with an MCP server."
         return $null

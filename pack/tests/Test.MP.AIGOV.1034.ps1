@@ -44,7 +44,7 @@ function Test-MPAIGOV1034 {
         ResourceType = 'DirectoryRole',
         Severity     = 'High',
         Control      = 'nist-800-53-r5:AC-6(5)',
-        Permission   = 'Graph:Application:RoleManagement.Read.Directory',
+        Permission   = 'Graph:Application:RoleManagement.Read.Directory|Graph:Application:User.Read.All',
         Service      = 'Graph',
         Lifecycle    = 'Preview'
     )]
@@ -98,6 +98,30 @@ function Test-MPAIGOV1034 {
         }
     }
 
+    # Expanded directory objects can omit the user-only userType property.
+    $UserTypeById = @{}
+    try {
+        foreach ($Id in @($Assignments | Where-Object {
+                    $_.principal.'@odata.type' -eq '#microsoft.graph.user' -and -not $_.principal.userType
+                } | Select-Object -ExpandProperty principalId -Unique)) {
+            $User = Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri "users/$Id" -Select @('id', 'userType') -DisableCache
+            if ([string]$User.userType -notin 'Member', 'Guest') {
+                Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+                    'An explicit user read did not return userType. Guest role-holder classification cannot be established.'
+                )
+                return $null
+            }
+            $UserTypeById[[string]$Id] = [string]$User.userType
+        }
+    } catch {
+        if ($_.Exception.Message -match '(?i)403|forbidden|authorization') {
+            Add-MtTestResultDetail -SkippedBecause NotAuthorized
+        } else {
+            Add-MtTestResultDetail -SkippedBecause Error -SkippedError $_
+        }
+        return $null
+    }
+
     $Rows = @(
         $Assignments | Where-Object { $null -ne $_ } | Select-Object `
             @{ n = 'RoleId'; e = { [string]$_.roleDefinitionId } },
@@ -105,7 +129,7 @@ function Test-MPAIGOV1034 {
             @{ n = 'PrincipalId'; e = { [string]$_.principalId } },
             @{ n = 'Principal'; e = { if ($_.principal.userPrincipalName) { [string]$_.principal.userPrincipalName } else { [string]$_.principal.displayName } } },
             @{ n = 'PrincipalType'; e = { ([string]$_.principal.'@odata.type') -replace '^#microsoft\.graph\.', '' } },
-            @{ n = 'IsGuest'; e = { [string]$_.principal.userType -eq 'Guest' } },
+            @{ n = 'IsGuest'; e = { [string]$_.principal.userType -eq 'Guest' -or $UserTypeById[[string]$_.principalId] -eq 'Guest' } },
             @{ n = 'IsPermanent'; e = { (-not $UsedFallback) -and [string]$_.assignmentType -eq 'Assigned' -and $null -eq $_.endDateTime } }
     )
 

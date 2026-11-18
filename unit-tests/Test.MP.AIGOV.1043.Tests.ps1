@@ -5,7 +5,7 @@ BeforeAll {
 
     $script:CopilotPolicy = @{
         Name = 'Copilot DLP'; Enabled = $true; Mode = 'Enable'; IsSimulationPolicy = $false
-        Locations = @(@{ Workload = 'Applications'; Location = '470f2276-e011-4e9d-a6ec-20768be3a4b0' }); EnforcementPlanes = @('CopilotExperiences')
+        Locations = '[{"Workload":"Applications","Location":"Copilot.M365"}]'; EnforcementPlanes = @('CopilotExperiences')
     }
     $script:Block = @(@{ setting = 'ExcludeContentProcessing'; value = 'Block' })
     $script:SitRule = @{ Name = 'Block SIT prompts'; ParentPolicyName = 'Copilot DLP'; Disabled = $false; RestrictAccess = $Block; ContentContainsSensitiveInformation = @(@{ name = 'Credit Card Number' }) }
@@ -39,7 +39,7 @@ Describe 'Test-MPAIGOV1043' {
     }
 
     It 'ignores rules in a simulation policy and skips, leaving the finding to MT.1175' {
-        $Sim = $CopilotPolicy.Clone(); $Sim.Mode = 'TestWithNotifications'
+        $Sim = $CopilotPolicy.Clone(); $Sim.Mode = 'TestWithNotifications'; $Sim.IsSimulationPolicy = $true
         Mock Get-MtExo { if ($Request -eq 'DlpCompliancePolicy') { @($Sim) } else { @($SitRule) } }
         Test-MPAIGOV1043 | Should -BeNullOrEmpty
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'MT.1175' }
@@ -49,5 +49,29 @@ Describe 'Test-MPAIGOV1043' {
         $Off = $LabelRule.Clone(); $Off.Disabled = $true
         Mock Get-MtExo { if ($Request -eq 'DlpCompliancePolicy') { @($CopilotPolicy) } else { @($SitRule, $Off, $WebRule, $ExternalRule) } }
         Test-MPAIGOV1043 | Should -Be $false
+    }
+
+    It 'recognizes the observed UploadText block shape for sensitive prompts, not labeled grounding' {
+        $Upload = $SitRule.Clone()
+        $Upload.RestrictAccess = @(@{ setting = 'UploadText'; value = 'Block' })
+        Mock Get-MtExo { if ($Request -eq 'DlpCompliancePolicy') { @($CopilotPolicy) } else { @($Upload) } }
+        Test-MPAIGOV1043 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Result -match 'Block prompts with sensitive info types \| On' -and
+            $Result -match 'Block labeled files and email \| Missing'
+        }
+    }
+
+    It 'does not combine an allowed processing action with a different blocked action' {
+        $Mixed = $LabelRule.Clone()
+        $Mixed.RestrictAccess = @(
+            @{ setting = 'ExcludeContentProcessing'; value = 'Allow' }
+            @{ setting = 'UploadText'; value = 'Block' }
+        )
+        Mock Get-MtExo { if ($Request -eq 'DlpCompliancePolicy') { @($CopilotPolicy) } else { @($SitRule, $Mixed, $WebRule, $ExternalRule) } }
+        Test-MPAIGOV1043 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Result -match 'Block labeled files and email \| Missing'
+        }
     }
 }

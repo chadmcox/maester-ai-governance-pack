@@ -43,7 +43,8 @@ function Test-MPAIGOV1042 {
 
     try {
         Write-Verbose 'Reading the Allow web search in Copilot policy setting.'
-        $Setting = Invoke-MtGraphRequest -ApiVersion 'beta' -RelativeUri 'copilot/admin/policySettings/microsoft.copilot.allowwebsearch' -DisableCache
+        # This singleton has a scalar value; paging would unwrap it and discard policyId.
+        $Setting = Invoke-MtGraphRequest -ApiVersion 'beta' -RelativeUri 'copilot/admin/policySettings/microsoft.copilot.allowwebsearch' -DisableCache -DisablePaging
     } catch {
         $Message = [string]$_.Exception.Message
         if ($Message -match '(?i)\b40[13]\b|forbidden|unauthorized|authorization') {

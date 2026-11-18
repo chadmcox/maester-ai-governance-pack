@@ -39,6 +39,38 @@ Describe 'Get-AIGovMcpToolFingerprint' {
     }
 }
 
+Describe 'Incomplete MCP metadata' {
+    BeforeEach {
+        Mock Add-MtTestResultDetail {}
+        $Visible = $Catalog[1].Clone()
+        $Visible.isBlocked = $false
+        Set-AIGovGraphRoute @(
+            , @('^copilot/admin/catalog/packages$', @($Catalog[0], $Visible))
+            , @('^copilot/admin/catalog/packages/p1$', (New-McpPackageDetail @($CleanTool)))
+            , @('^copilot/admin/catalog/packages/p2$', @{
+                    elementDetails = @(@{
+                            elementType = 'AgentConnectors'
+                            elements = @(@{ definition = '{"toolSource":{"remoteMcpServer":{"mcpServerUrl":"https://mcp.vendor.example","mcpToolDescription":{"tools":null}}}}' })
+                        })
+                })
+        )
+    }
+
+    It 'does not approve a partial baseline when another reachable package has unavailable tools' {
+        Test-MPAIGOV1038 -Baseline @(@{ PackageId = 'p1'; ToolName = 'search'; Fingerprint = 'approved' }) | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'tool definitions'
+        }
+    }
+
+    It 'does not pass clean descriptions when another reachable package has unavailable tools' {
+        Test-MPAIGOV1039 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'tool definitions'
+        }
+    }
+}
+
 Describe 'Test-MPAIGOV1038' {
     BeforeEach {
         Mock Add-MtTestResultDetail {}
@@ -56,6 +88,22 @@ Describe 'Test-MPAIGOV1038' {
     It 'passes when the tool matches the baseline' {
         $Fingerprint = @{ ToolName = 'search'; Description = $CleanTool.description; InputSchema = ($CleanTool.inputSchema | ConvertTo-Json -Depth 20 | ConvertFrom-Json); Annotations = ($CleanTool.annotations | ConvertTo-Json | ConvertFrom-Json) } | Get-AIGovMcpToolFingerprint
         Test-MPAIGOV1038 -Baseline @(@{ PackageId = 'p1'; ToolName = 'search'; Fingerprint = $Fingerprint }) | Should -Be $true
+    }
+
+    It 'does not produce a baseline when the live catalog shape exposes only a server URL' {
+        Set-AIGovGraphRoute @(
+            , @('^copilot/admin/catalog/packages$', $Catalog)
+            , @('^copilot/admin/catalog/packages/p1$', @{
+                    elementDetails = @(@{
+                            elementType = 'AgentConnectors'
+                            elements = @(@{ definition = '{"toolSource":{"remoteMcpServer":{"mcpServerUrl":"https://mcp.vendor.example"}}}' })
+                        })
+                })
+        )
+        Test-MPAIGOV1038 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'tool definitions'
+        }
     }
 
     It 'fails Medium when a tool changed and when a tool is new' {
@@ -81,6 +129,22 @@ Describe 'Test-MPAIGOV1039' {
             , @('^copilot/admin/catalog/packages/p1$', (New-McpPackageDetail @($CleanTool)))
         )
         Test-MPAIGOV1039 | Should -Be $true
+    }
+
+    It 'skips instead of passing when the live catalog shape exposes no tool definitions' {
+        Set-AIGovGraphRoute @(
+            , @('^copilot/admin/catalog/packages$', $Catalog)
+            , @('^copilot/admin/catalog/packages/p1$', @{
+                    elementDetails = @(@{
+                            elementType = 'AgentConnectors'
+                            elements = @(@{ definition = '{"toolSource":{"remoteMcpServer":{"mcpServerUrl":"https://mcp.vendor.example"}}}' })
+                        })
+                })
+        )
+        Test-MPAIGOV1039 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'tool definitions'
+        }
     }
 
     It 'fails Medium for steering text, including text hidden in the input schema' {

@@ -50,6 +50,33 @@ Describe 'Test-MPAIGOV1034' {
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match 'guest user' -and $Result -match 'non-human principal' }
     }
 
+    It 'reads userType explicitly when expanded principals omit it, as in the live response' {
+        $Guest = New-RoleInstance $AiAdmin 'u1' 'guest@contoso.com'
+        $Guest.principal.Remove('userType')
+        Set-AIGovGraphRoute @(
+            , @('roleAssignmentScheduleInstances', @($Guest), $AiAdmin)
+            , @('roleAssignmentScheduleInstances', @())
+            , @('^users/u1$', @{ id = 'u1'; userType = 'Guest' })
+        )
+        Test-MPAIGOV1034 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match 'guest user' }
+        Should -Invoke Invoke-MtGraphRequest -Times 1 -ParameterFilter { $RelativeUri -eq 'users/u1' -and $Select -contains 'userType' }
+    }
+
+    It 'does not claim no guests when an explicit user read omits userType' {
+        $Unknown = New-RoleInstance $AiAdmin 'u1' 'user@contoso.com'
+        $Unknown.principal.Remove('userType')
+        Set-AIGovGraphRoute @(
+            , @('roleAssignmentScheduleInstances', @($Unknown), $AiAdmin)
+            , @('roleAssignmentScheduleInstances', @())
+            , @('^users/u1$', @{ id = 'u1' })
+        )
+        Test-MPAIGOV1034 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'userType'
+        }
+    }
+
     It 'fails Medium when a role has more holders than allowed' {
         $Many = 1..4 | ForEach-Object { New-RoleInstance $AiAdmin "u$_" "user$_@contoso.com" }
         Set-AIGovGraphRoute @(

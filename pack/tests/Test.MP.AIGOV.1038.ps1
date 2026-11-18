@@ -69,6 +69,14 @@ function Test-MPAIGOV1038 {
     $ToolRows = @($McpPackages | Get-AIGovMcpTool)
     $FailedCount = @($ToolRows | Where-Object { $_.Failed } | Select-Object -ExpandProperty PackageId -Unique).Count
 
+    if ($ToolRows.FailureReason -contains 'ToolDefinitionsUnavailable') {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+            'MCP tool definitions are unavailable for one or more reachable packages in the catalog response. ' +
+            'A server URL alone cannot establish a complete tool baseline. This check does not connect to MCP servers.'
+        )
+        return $null
+    }
+
     if ($McpPackages.Count -gt 0 -and $FailedCount -eq $McpPackages.Count) {
         Add-MtTestResultDetail -SkippedBecause Error -Result "Couldn't read or parse any of the $($McpPackages.Count) package(s) with an MCP server."
         return $null

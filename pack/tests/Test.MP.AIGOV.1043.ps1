@@ -13,8 +13,8 @@ function Test-MPAIGOV1043 {
     Each enforced rule is classified against the four protections the Copilot location supports:
 
     - Block prompts with sensitive info types: a sensitive information type condition with
-      RestrictAccess ExcludeContentProcessing = Block. (Medium if missing)
-    - Block labeled files and email: a sensitivity label condition with the same action. (Medium if
+      RestrictAccess UploadText or ExcludeContentProcessing = Block. (Medium if missing)
+    - Block labeled files and email: a sensitivity label condition with ExcludeContentProcessing = Block. (Medium if
       missing; needs Microsoft 365 E5-level Purview)
     - Block web search for sensitive prompts: RestrictWebGrounding = true. (Low if missing)
     - Exclude external email from grounding: FromScope NotInOrganization with the processing block.
@@ -82,17 +82,18 @@ function Test-MPAIGOV1043 {
     $Classified = @(
         $ActiveRules | Select-Object @{ n = 'Rule'; e = { [string]$_.Name } }, @{ n = 'Policy'; e = { [string]$_.ParentPolicyName } },
             @{ n = 'Conditions'; e = { (@($_.ContentContainsSensitiveInformation) | ConvertTo-Json -Depth 20 -Compress) + " $($_.AdvancedRule)" } },
-            @{ n = 'Blocks'; e = { (@($_.RestrictAccess) | ConvertTo-Json -Depth 10 -Compress) -match '(?i)ExcludeContentProcessing' -and (@($_.RestrictAccess) | ConvertTo-Json -Depth 10 -Compress) -match '(?i)Block' } },
+            @{ n = 'Blocks'; e = { @($_.RestrictAccess | Where-Object { $_.setting -eq 'ExcludeContentProcessing' -and $_.value -eq 'Block' }).Count -gt 0 } },
+            @{ n = 'BlocksPrompts'; e = { @($_.RestrictAccess | Where-Object { $_.setting -in 'UploadText', 'ExcludeContentProcessing' -and $_.value -eq 'Block' }).Count -gt 0 } },
             @{ n = 'WebSearch'; e = { $_.RestrictWebGrounding -eq $true } },
             @{ n = 'External'; e = { [string]$_.FromScope -match '(?i)NotInOrganization' } } |
-            Select-Object Rule, Policy, WebSearch, External, Blocks,
+            Select-Object Rule, Policy, WebSearch, External, Blocks, BlocksPrompts,
                 @{ n = 'HasLabels'; e = { $_.Conditions -match '(?i)"type"\s*:\s*"Sensitivity"|"labels"\s*:\s*\[\s*\{' } },
                 @{ n = 'HasSits'; e = { $_.Conditions -match '(?i)"sensitivetypes"\s*:\s*\[\s*\{' -or ($_.Conditions -match '(?i)"name"\s*:' -and $_.Conditions -notmatch '(?i)"labels"\s*:\s*\[\s*\{') } }
     )
 
     # One row per protection the Copilot location supports: name, weight if missing, and the rule test.
     $Checks = @(
-        , @('Block prompts with sensitive info types', 'Medium', { $_.Blocks -and $_.HasSits -and -not $_.External })
+        , @('Block prompts with sensitive info types', 'Medium', { $_.BlocksPrompts -and $_.HasSits -and -not $_.External })
         , @('Block labeled files and email', 'Medium', { $_.Blocks -and $_.HasLabels })
         , @('Block web search for sensitive prompts', 'Low', { $_.WebSearch })
         , @('Exclude external email from grounding', 'Low', { $_.External -and $_.Blocks })
