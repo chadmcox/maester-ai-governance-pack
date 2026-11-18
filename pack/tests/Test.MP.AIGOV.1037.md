@@ -54,6 +54,10 @@ unregistered agents); NIST 800-53 CM-8; AI RMF GOVERN 1.6.
 > that rule (as a hunting query): 428 catalog agents, 3 local, 2 drafts, 1 counted Copilot Studio agent with an
 > Entra identity, so the test would pass. No tenant-built Agent Builder agents were present, so it's not proven
 > that those carry owners; if one has no owners, it would be treated as a catalog agent.
+>
+> **Maester run** Nov 18, 2026 (commit `269d53e`): **Passed** in about 10 seconds. One counted Copilot Studio agent,
+> with an Entra identity; 428 `Other` agents reported as vendor catalog agents, 3 local agents and 2 drafts not
+> counted. The pass comes from the classification: the 421 catalog agents still have no Entra identity.
 
 #### Remediation action
 

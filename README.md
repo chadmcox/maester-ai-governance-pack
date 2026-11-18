@@ -47,7 +47,7 @@ the installed pack -- see the comment in
 | MP.AIGOV.1034 | AI administration roles should be eligible through PIM and held by a small number of internal users | Preview | Validated, Graph only |
 | MP.AIGOV.1035 | Agent identity blueprints should not authenticate with client secrets | Preview | Validated, Graph only |
 | MP.AIGOV.1036 | Enabled agent identities should have at least one active sponsor | Preview | Validated, Graph only |
-| MP.AIGOV.1037 | Agents discovered by Microsoft Defender should have a Microsoft Entra identity | Preview | Validated, Graph (advanced hunting) |
+| MP.AIGOV.1037 | Agents discovered by Microsoft Defender should have a Microsoft Entra identity | Preview | Validated (catalog vendor agents reported for information), Graph (advanced hunting) |
 | MP.AIGOV.1038 | MCP tools should match the definitions you approved | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1039 | MCP tool descriptions should describe the tool, not instruct the model | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1040 | Sensitivity labels should include a sites and groups label and use unique names | Preview | Validated, Graph only |

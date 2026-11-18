@@ -308,7 +308,7 @@ unchanged. Unit tests 230 passed with the sibling `maester-src` checkout.
 | Test | Result | Independent check |
 |---|---|---|
 | 1032 | Uncapped: 11,445 unique members, 64 findings (49 stale, 15 older with no history), about 7 minutes | Membership recount and five direct user reads agreed |
-| 1037 | 421 of 429 counted agents, all platform `Other` | Hunting counts agreed. Portal check: all 421 were vendor catalog agents (no owners, no source agent ID). Test now reports those for information; the same rule run live leaves 1 counted agent, with an Entra identity |
+| 1037 | 421 of 429 counted agents, all platform `Other` | Hunting counts agreed. Portal check: all 421 were vendor catalog agents (no owners, no source agent ID). Test now reports those for information; the same rule run live leaves 1 counted agent, with an Entra identity. Maester run at `269d53e` passed |
 | 1038-1039 | Skipped: two packages, zero tool definitions | Raw definitions agreed. Skip reason now names the packages |
 
 Changes from this rerun: the 1037 platform table now separates drafts and counted agents, 1037 reports vendor
