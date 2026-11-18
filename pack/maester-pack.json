@@ -3,8 +3,8 @@
   "Id": "chadmcox.ai-governance",
   "Guid": "312805e3-4f72-45c0-ba29-7e13582f1cca",
   "Name": "Copilot AI Governance",
-  "Description": "Findings for how AI agents, agent identities, and the Copilot agent catalog are governed in Microsoft 365: sponsor/owner coverage, unused agents and tools, assignment-group ownership, broad Graph write permissions on agent identities, unclear agent and blueprint names, classic Copilot Studio service principals without owners or use, classic Copilot Studio service principals without an Agent ID, catalog adoption, blocked-package requests, direct user assignment, tenant-wide custom package deployment, MCP server transport security and host allowlisting, destructive/open-world MCP tools in tenant-wide packages, agent skill description hygiene, blueprint credentials nearing expiration, and Copilot spending-policy configuration, alerting, credit ceilings, group governance, membership hygiene, and overlap, and synced Copilot connectors that take content from outside apps. Connector checks cover only what users can reach.",
-  "Version": "0.7.2",
+  "Description": "Findings for how AI agents, agent identities, and the Copilot agent catalog are governed in Microsoft 365: sponsor/owner coverage, unused agents and tools, assignment-group ownership, broad Graph write permissions on agent identities, unclear agent and blueprint names, classic Copilot Studio service principals without owners or use, classic Copilot Studio service principals without an Agent ID, catalog adoption, blocked-package requests, direct user assignment, tenant-wide custom package deployment, MCP server transport security and host allowlisting, destructive/open-world MCP tools in tenant-wide packages, agent skill description hygiene, blueprint credentials nearing expiration, and Copilot spending-policy configuration, alerting, credit ceilings, group governance, membership hygiene, and overlap, and synced Copilot connectors that take content from outside apps. Connector checks cover only what users can reach. Also checks AI administration roles held without PIM, agent identity blueprint client secrets, agent identities with no active sponsor, foreign agent blueprints from unverified publishers, Defender-discovered agents with no Entra identity, MCP tool definition drift and steering text, sensitivity label prerequisites, Copilot web search, which Copilot DLP protections are enforced, Copilot interaction audit retention, and Azure OpenAI and AI Services hardening.",
+  "Version": "0.8.0",
   "Publisher": "chadmcox",
   "License": "MIT",
   "Banner": "assets/banner.png",
@@ -16,9 +16,59 @@
   "Helpers": [
     "helpers"
   ],
+  "Settings": {
+    "AIGOV.MaxAiAdminRoleHolders": {
+      "Type": "int",
+      "Default": 3,
+      "Description": "The most distinct principals that should hold each AI administration role (MP.AIGOV.1034)."
+    },
+    "AIGOV.McpToolBaseline": {
+      "Type": "object[]",
+      "Default": [],
+      "Description": "Approved MCP tools as PackageId, ToolName and Fingerprint entries (MP.AIGOV.1038)."
+    },
+    "AIGOV.McpSteeringPatterns": {
+      "Type": "string[]",
+      "Default": [
+        "(?i)ignore\\s+(all\\s+|any\\s+)?(previous|prior|above|other)\\s+(instructions|prompts|rules)",
+        "(?i)disregard\\s+(the\\s+|all\\s+)?(system|previous|prior|above)",
+        "(?i)do\\s+not\\s+(tell|inform|mention|reveal|show)\\b.{0,30}\\buser",
+        "(?i)always\\s+(call|use|invoke|run|prefer)\\s+this\\s+tool",
+        "(?i)(before|instead\\s+of)\\s+(using|calling)\\s+(any|other|all)\\s+(other\\s+)?tools?",
+        "(?i)<\\s*/?\\s*(important|system|instructions?)\\s*>",
+        "(?i)you\\s+must\\s+(always|first|now|never)",
+        "(?i)(send|forward|upload|post|include)\\b.{0,40}\\b(credential|password|token|secret|api\\s*key)s?\\b"
+      ],
+      "Description": "Regular expressions that mark an MCP tool description as steering the model (MP.AIGOV.1039)."
+    },
+    "AIGOV.MaxSpendingPolicyMembers": {
+      "Type": "int",
+      "Default": 5000,
+      "Description": "The most unique spending-policy group members checked in one run; 0 means no cap (MP.AIGOV.1032)."
+    },
+    "AIGOV.ExcludedAgentPlatforms": {
+      "Type": "string[]",
+      "Default": [],
+      "Description": "Defender agent platforms whose agents run as the signed-in user and are counted for information only (MP.AIGOV.1037)."
+    },
+    "AIGOV.MinimumAiAuditRetention": {
+      "Type": "string",
+      "Default": "TwelveMonths",
+      "AllowedValues": [
+        "SixMonths",
+        "NineMonths",
+        "TwelveMonths",
+        "TenYears"
+      ],
+      "Description": "The shortest acceptable retention for CopilotInteraction audit records (MP.AIGOV.1044)."
+    }
+  },
   "Uses": {
     "Services": [
-      "Graph"
+      "Graph",
+      "ExchangeOnline",
+      "SecurityCompliance",
+      "Azure"
     ],
     "GraphScopes": [
       "Application.Read.All",
@@ -34,7 +84,11 @@
       "GroupMember.Read.All",
       "AuditLog.Read.All",
       "Organization.Read.All",
-      "ExternalConnection.Read.All"
+      "ExternalConnection.Read.All",
+      "RoleManagement.Read.Directory",
+      "ThreatHunting.Read.All",
+      "SensitivityLabel.Read",
+      "CopilotPolicySettings.Read"
     ],
     "Network": [],
     "Modules": []

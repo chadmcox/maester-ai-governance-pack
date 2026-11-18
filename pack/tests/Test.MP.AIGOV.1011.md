@@ -14,6 +14,11 @@ the same way as `MP.AIGOV.1008`/`MP.AIGOV.1010`: a partial failure is noted in t
 total failure skips with `Error` instead of reporting a false pass.
 
 > [!NOTE]
+> **Live rerun** Nov 18, 2026 **Passed** with zero tenant-wide MCP candidates. Both reachable MCP
+> packages were group-scoped. This vacuous negative does not re-exercise the previously documented
+> tenant-wide annotation finding; current catalog scope differs from the earlier banner.
+
+> [!NOTE]
 > **Validated** 2026-11-06 against a real Microsoft 365 test tenant (F7-licensed). The run
 > correctly **Failed** (true positive): found MCP tools with `openWorldHint: true` inside a
 > tenant-wide package ("Moody's Credit MCP", `type: thirdParty`, `availableTo: allowedForAll`),

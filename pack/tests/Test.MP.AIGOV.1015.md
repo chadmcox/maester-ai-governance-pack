@@ -1,4 +1,8 @@
 > [!NOTE]
+> **Revalidated** Nov 18, 2026: **Passed** (true negative) with 21 enabled policies and 21
+> audiences checked. No more-permissive overlapping cap was reported under the revised scope.
+
+> [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant (F7-licensed), via an actual
 > `Invoke-Maester` run of this revised (most-permissive-policy-wins) version. The run correctly
 > **Passed** (true negative): across 8 enabled spending policies and 8 audiences checked, no

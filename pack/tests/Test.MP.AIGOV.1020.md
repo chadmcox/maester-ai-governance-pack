@@ -1,4 +1,9 @@
 > [!NOTE]
+> **Revalidated** Nov 18, 2026: **Passed** (true negative) for three reachable custom agents/tools.
+> This confirms the revised reachability scope below no longer reports the former unreachable
+> finding; the change is not evidence that the earlier unused object became active.
+
+> [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
 > The run correctly **Failed** (true positive): one custom agent ("Vani") was never used and hadn't been
 > modified in over 180 days. The package-detail `activeUsers` and `lastUsedDateTime` properties read and

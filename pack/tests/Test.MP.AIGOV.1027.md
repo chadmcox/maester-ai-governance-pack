@@ -1,4 +1,9 @@
 > [!NOTE]
+> **Live rerun** Nov 18, 2026 **Passed** with five informational dynamic-group notices and no
+> failing group finding. The earlier nested-group finding was not reproduced in the current
+> input; no test code was changed to obtain this outcome.
+
+> [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
 > The run correctly **Failed** (true positive): the group behind the "Cowork Limited" policy has a nested
 > group. First live run surfaced a real bug: the beta `assignedGroups` navigation property under

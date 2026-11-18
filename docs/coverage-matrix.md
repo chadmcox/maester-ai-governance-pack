@@ -1,7 +1,9 @@
 # Coverage matrix — Maester AI-governance findings pack
 
 Sorted Gap → Partial → Covered. Every "Existing Maester test" cites file path at
-commit `616559854634e5150dbde69850c4224191635bb1` of `maester365/maester`. Severity
+commit `616559854634e5150dbde69850c4224191635bb1` of `maester365/maester`, except the section
+"Framework gap review (2026-11-18)" at the end, which was checked against commit
+`512a076de7bb173045a2ebe62b0493d613ddd0b5` (Nov 17, 2026). Severity
 uses Maester's real 5-value scale (`Critical/High/Medium/Low/Info`). Framework
 mapping types: **Direct** = Direct requirement, **Support** = Supporting alignment,
 **Org** = Organization policy, **Unmapped**.
@@ -27,7 +29,7 @@ mapping types: **Direct** = Direct requirement, **Support** = Supporting alignme
 | G16 | Billing | Policy group with fewer than 2 owners, or no description | Group backing a spending-policy audience has <2 owners / empty description | Graph v1.0 (group object) + beta cost-management link | none | Gap | Low | Org | — | **Built and live-validated as `MP.AIGOV.1014`.** Reads `assignedGroups` via the confirmed type-cast path (`.../{id}/microsoft.graph.selectedGroupsSpendingPolicy/assignedGroups`), then each group's owners/`description`. Live run: all 8 distinct backing groups had zero owners, several also had no description — true positive. |
 | G17 | Billing | Members assigned directly to a spending policy (not via group) | `assignedGroups` audience list bypassed by direct member assignment, if the API allows it | Graph beta `/copilot/costManagement/spendingPolicies/{id}/.../assignedGroups` | none | Dropped — not a real condition | — | — | — | **Confirmed not buildable.** A full read of the beta `$metadata` for the `spendingPolicy` hierarchy found exactly two concrete subtypes: `allUsersSpendingPolicy` (no group-assignment property at all) and `selectedGroupsSpendingPolicy` (only a group-collection `assignedGroups`). No individual-user-direct-assignment subtype exists anywhere in the schema, so a policy cannot bypass group assignment this way — same disposition as the dropped G21. |
 | G18 | Billing | Overlapping/contradictory spending policies (two policies both scope the same group/service with conflicting caps) | Cross-policy audience-overlap detection | Graph beta, same endpoint | none | Gap | Medium | Org | — | **Built as `MP.AIGOV.1015`; revised 2026-11-06** to apply Microsoft's documented rule that the most permissive overlapping policy is enforced (higher limit wins, limits not combined). Now includes all-users policies, reports the effective per-user limit and which lower caps are overridden (High if overridden by Unlimited, Medium if by a higher cap, Low for redundant or incomparable overlaps). Resource-scoped policies aren't in Graph yet, so resource-vs-identity precedence is a manual check. Re-validation against a live tenant pending. |
-| G19 | Agents | Cloud agent discovered by Defender but absent from the Agent 365 registry | Defender XDR Advanced Hunting/App Governance surfaces an agent/app identity with no matching `microsoft.graph.agentIdentity` object | Defender Advanced Hunting (KQL) + Graph v1.0 `servicePrincipals/microsoft.graph.agentIdentity` cross-reference | none | Gap | Medium | Unmapped | — | **Defender-dependent, explicitly outside the Graph-only pilot.** Distinct from G7: G7 is the classic-Copilot-Studio-SP-tag-based state ("not registered in Agent ID"); this is Defender's independent discovery signal catching agents/apps outside both the classic-SP-tag detection and the Agent ID registry entirely. Needs MDA App Governance/MDI, same dependency class as MT.1077-1079. |
+| G19 | Agents | Cloud agent discovered by Defender but absent from the Agent 365 registry | Defender XDR Advanced Hunting/App Governance surfaces an agent/app identity with no matching `microsoft.graph.agentIdentity` object | Defender Advanced Hunting (KQL) + Graph v1.0 `servicePrincipals/microsoft.graph.agentIdentity` cross-reference | none | Gap | Medium | Unmapped | — | **Built as `MP.AIGOV.1037` (2026-11-18)** through Graph `POST /security/runHuntingQuery` on the `AgentsInfo` table (which replaced `AIAgentsInfo` in June 2026), so it no longer needs a separate Defender connection; it still needs Defender XDR with Agent 365. Original note: Defender-dependent, explicitly outside the Graph-only pilot. Distinct from G7: G7 is the classic-Copilot-Studio-SP-tag-based state ("not registered in Agent ID"); this is Defender's independent discovery signal catching agents/apps outside both the classic-SP-tag detection and the Agent ID registry entirely. Needs MDA App Governance/MDI, same dependency class as MT.1077-1079. |
 | G20 | Tools/MCP | MCP server endpoint reachable over plain `http://` instead of `https://` | Discovered MCP server URL scheme is `http` | Graph v1.0 `copilot/admin/catalog/packages` + per-package `elementDetails[].elements[].definition` JSON (`toolSource.remoteMcpServer.mcpServerUrl`), `CopilotPackages.Read.All` — **corrected this revision: confirmed live as Graph-only, not Defender-dependent** | none — MT.1120 is a different check (reviews whether MCP **tools** have been reviewed/approved, via Dataverse agent-tool metadata; it does not inspect the MCP server's URL scheme) | Gap | High | Unmapped | — | **Built and live-validated as `MP.AIGOV.1008`.** Not the same finding as C8/MT.1120 — MT.1120 is tool-review hygiene, not transport-security inspection of the MCP endpoint itself. Live run against the test tenant: 37/37 MCP packages were `https://`, zero findings (true negative). |
 | G22 | Agents | Blocked package with an open pending request | Package status = Blocked AND a pending install/consent request exists | Graph v1.0 `copilot/admin/catalog/packages` (`isBlocked` + `requestStatus`/`requestType` filters; confirmed both properties exist, license-gated) | none — MT.1118 does not apply here (it is the maker-auth connection check, not a package-request-status check) | Gap | Low | Org | — | **Reclassified from Partial.** No Maester test reads package *request* status at all; this is the `chadmcox/Copilot` "blocked + pending" finding, confirmed as a real, distinct Graph v1.0 object (the Package Management API's `requestStatus`/`requestType` filters, GA since the referenced "August 2026" what's-new entry). This is pilot item `MP.AIGOV.1002`. |
 | G21b | Tools/MCP | MCP server hosted on a domain outside a configurable allowlist | Discovered `mcpServerUrl` host does not match any entry in `-AllowedHosts` (default Microsoft domain suffixes only) | Graph v1.0 `copilot/admin/catalog/packages` + per-package `elementDetails` (same `mcpServerUrl` field as G20) | none | Gap | Medium | nist-800-53-r5:SA-9 | Support | **Built and live-validated as `MP.AIGOV.1010`.** Distinct design from the dropped G21: rather than a static, non-tunable "non-Microsoft host" signal that would flag all 37 MCP packages in this tenant with zero differentiation, `.1010` takes a configurable allowlist so an admin curates it as vendors are reviewed — after which only genuinely new/unreviewed hosts surface. Live run: 37/37 packages flagged non-allowlisted under the (intentionally empty-of-vendors) default allowlist — expected true positive, not a design flaw. |
@@ -55,7 +57,7 @@ mapping types: **Direct** = Direct requirement, **Support** = Supporting alignme
 
 | # | Surface | Candidate finding | Trigger | Data source + permission | Existing test(s) | Coverage | Severity | Framework mapping | Type | What's missing |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P2 | Blueprints | Client secret retained where a certificate (or FIC) would remove the live fallback (as a standalone preference, not only when paired with a FIC) | Blueprint has any `passwordCredentials` entry, independent of whether a FIC also exists | Graph v1.0 `agentIdentityBlueprints/{id}` | MT.1208 (full source read: only flags secret-retention when a FIC is **also** present on the same blueprint — "a live fallback that defeats the point of migrating to FIC") | Partial | Low | Org | — | A blueprint with only a plain client secret and **no** FIC passes MT.1208 entirely; the "prefer certificate/FIC over secret" baseline is not enforced as a standalone condition, only the secret+FIC combination. |
+| P2 | Blueprints | Client secret retained where a certificate (or FIC) would remove the live fallback (as a standalone preference, not only when paired with a FIC) | Blueprint has any `passwordCredentials` entry, independent of whether a FIC also exists | Graph v1.0 `agentIdentityBlueprints/{id}` | MT.1208 (full source read: only flags secret-retention when a FIC is **also** present on the same blueprint — "a live fallback that defeats the point of migrating to FIC") | Partial | Low | Org | — | A blueprint with only a plain client secret and **no** FIC passes MT.1208 entirely; the "prefer certificate/FIC over secret" baseline is not enforced as a standalone condition, only the secret+FIC combination. **Built as `MP.AIGOV.1035` (2026-11-18)**: CISA's draft SCuBA agent baseline MS.SI.2.1 makes this a SHALL. |
 | P3 | Billing | — (no Partial billing items; all billing candidates are clean Gaps since no Maester test touches `/copilot/costManagement` at all) | | | | | | | | |
 
 **Reclassified this revision:** the former P1 ("Blocked package with an open
@@ -220,3 +222,122 @@ stays, already cited per-row above where Maester ships a Control.
 - The Skills/MCP `elementType` taxonomy above is confirmed live against the test
   tenant (2026-11-05); see `phase0-notes.md` surface 3 for the full schema.
 - G11, G17, G18: framework/API details flagged inline as unverified this run.
+
+## Framework gap review (2026-11-18)
+
+Checked the pack against CISA SCuBA (`aad.md` MS.AAD.9.1, released in ScubaGear 2.0.0; `si.md` "SI / SI Agents"
+baseline MS.SI.1.1–13.6, a **draft** on ScubaGear `main` @ `18f7930` with rationale and instructions still "TBD";
+`powerplatform.md`), CISA/NSA/Five Eyes *Careful Adoption of Agentic AI Services* (May 1, 2026), CIS M365
+Foundations Benchmark v7.0.0 (May 19, 2026; only AI item is 3.2.3), CIS Controls v8.1 AI companion guides (LLM,
+Agents, MCP; Apr 20, 2026), and NIST AI RMF 1.0 / AI 600-1. NIST COSAiS and IR 8596 are still drafts and aren't
+mapped.
+
+### Built this round
+
+| # | Finding | Test | Data source | Framework mapping (Supporting) |
+|---|---|---|---|---|
+| G30 | AI Administrator, Agent ID Administrator or Agent Registry Administrator held permanently, by a guest or app, or by too many people | `MP.AIGOV.1034` | Graph `roleAssignmentScheduleInstances` (fallback `roleAssignments`), `RoleManagement.Read.Directory` | cisa-scuba MS.SI.6.4 (draft); nist-800-53-r5:AC-6(5), AC-2(7) |
+| P2 → built | Blueprint authenticates with a client secret | `MP.AIGOV.1035` | Graph `applications/microsoft.graph.agentIdentityBlueprint` | MS.SI.2.1 (draft); IA-5 |
+| G31 | Enabled agent identity with no active sponsor | `MP.AIGOV.1036` | Graph `.../microsoft.graph.agentIdentity/sponsors` | MS.SI.3.1 (draft); AC-2 |
+| G19 → built | Defender-discovered agent with no Entra identity | `MP.AIGOV.1037` | Graph `security/runHuntingQuery` on `AgentsInfo`, `ThreatHunting.Read.All` | CISA agentic (registry reconciliation); CM-8; AI RMF GOVERN 1.6 |
+| G32 | MCP tool definition changed or added since approval | `MP.AIGOV.1038` | Package detail `elementDetails`, baseline in `AIGOV.McpToolBaseline` | CISA agentic (allow-list tools and versions); CIS MCP Companion Guide; CM-2, CM-3 |
+| G33 | MCP tool description steers the model, or tool has no behavior annotations | `MP.AIGOV.1039` | Package detail `elementDetails` | CISA agentic (standardize tool descriptions); SI-10 |
+| G34 | No sites-and-groups sensitivity label, or duplicate label names | `MP.AIGOV.1040` | Graph v1.0 `security/dataSecurityAndGovernance/sensitivityLabels`, `SensitivityLabel.Read` | MS.SI.6.1, 6.3, 7.2, 7.4 (draft); AC-16 |
+| G35 | Foreign agent blueprint principal from an unverified publisher | `MP.AIGOV.1041` | Graph `agentIdentityBlueprintPrincipal` (`verifiedPublisher` population **unverified**) | CISA agentic (third-party registry); SR-3, SA-9 |
+| G36 | Web search in Copilot on for everyone | `MP.AIGOV.1042` | Graph beta `copilot/admin/policySettings/microsoft.copilot.allowwebsearch`, delegated `CopilotPolicySettings.Read` only | MS.SI.10.3 (draft); AC-4 |
+| G37 | Enforced Copilot DLP policy doesn't turn on all four Copilot protections | `MP.AIGOV.1043` | S&C `Get-DlpCompliancePolicy` / `Get-DlpComplianceRule` (`RestrictAccess` ExcludeContentProcessing, `RestrictWebGrounding`, `FromScope`) | MS.SI.10.2, 10.3, 10.5, 10.6 (draft); CIS M365 3.2.3 (adjacent); AC-4 |
+| G38 | CopilotInteraction audit records kept less than required | `MP.AIGOV.1044` | S&C `Get-UnifiedAuditLogRetentionPolicy` | MS.SI.5.1, 11.4 (draft); AU-11 |
+| G39 | Azure OpenAI / AI Services account allows key auth or public access, or Defender for AI Services is off | `MP.AIGOV.1045` | Azure Resource Graph + ARM `Microsoft.Security/pricings/AI` | IA-2, SC-7, SI-4 |
+
+### Live review (Nov 18, 2026)
+
+The local pack was run with the pinned Maester source and delegated connections, with raw evidence kept
+outside tracked files. Graph batching was not disabled: the 1032 diagnostic used batches. Historical
+batch bodies were not captured; the accepted source audit shows GET-only inner requests for this test.
+A directory-audit read for the signed-in user over the live-run window returned zero entries. Request-body
+logging was verified offline before resuming. A skip or empty inventory is not validation of the missing
+branch. The following observations limit the framework claims:
+
+| Tests | Confirmed or corrected | Remaining limit |
+|---|---|---|
+| 1034 | 104 active assignments were `Assigned` without an end date; all three roles exceeded three holders. No eligible schedule instances were returned. Expanded users omitted `userType` and nested selection failed; added explicit user reads. Independent reads found 58 distinct member users. | No guest or app assignment was present. |
+| 1035-1036 | Two of six blueprints had active secrets; the application federated-credentials path worked for the derived blueprint type. All 11 enabled identities had enabled user sponsors. | Certificate and inactive-sponsor cases were not present. |
+| 1037 | Corrected case-sensitive hunting columns to `Name`, `EntraAgentID`, `EntraBlueprintID`, with aliases preserving result fields. Independent and corrected test results agreed: 421 of 431 cloud rows had neither Entra identifier; three local rows were informational. Query errors no longer impersonate a missing-table/license skip. | A populated table does not exercise the unavailable-table case. 428 flagged rows were platform `Other`; follow-up added lifecycle/draft filters, `column_ifexists` for both column spellings, a per-platform count and `AIGOV.ExcludedAgentPlatforms` (unit-tested, needs a live rerun). |
+| 1038-1039 | Both reachable MCP packages supplied only a server URL, with no tool definitions. Corrected the unsupported zero-tool pass and unusable baseline to explicit missing-metadata skips, including partial metadata coverage. | Live fingerprint approval/change/stability and manual steering-hit review could not run; no remote MCP server was contacted. Follow-up: packages that do list tools are now evaluated; packages without definitions are named and the result is a partial-check skip unless something fails. |
+| 1040 | Eight roots and seven inline sublabels; four of 15 enabled labels applied to sites/groups. `applicableTo` was a string; root `isDefault` values were false. | No duplicate-name case was present. |
+| 1041 | `$select=verifiedPublisher` succeeded on eight blueprint principals, but every publisher ID was empty. Added explicit skips for unsupported selection or all-empty IDs instead of inferring publisher verification. | No foreign principal or populated publisher ID was available; publisher classification remains unvalidated. |
+| 1042 | Raw singleton response contained `value=null`, `policyId=null`, matching the user's Apps admin center confirmation of Not configured. Disabled Maester paging to preserve the scalar setting and policy metadata rather than unwrapping `value`. | No configured setting value was available live. |
+| 1043 | Five policies, nine rules; the only Copilot policy was simulation. Actual `Locations` was a JSON string containing `Copilot.M365`; the rule had a sensitive-information array and `RestrictAccess` `UploadText=Block`. The user confirmed simulation and prompt blocking in Purview. Updated synthetic fixtures, prompt-action matching, and same-action block pairing. | The live skip is not proof of enforced protections. |
+| 1044 | Independent native command returned zero retention policies, confirming the missing-policy finding. | `RecordTypes`, `Enabled` availability and duration values cannot be checked without an object. |
+| 1045 | Resource Graph returned no accounts, and independent subscription enumeration found zero accessible subscriptions. | The empty-inventory pass proves neither account configuration nor pricing; no subscription was available for a pricing GET. |
+
+Earlier-test outcome changes were compared with their dated banners. For 1009, one secret moved from outside
+the 30-day window to approximately 30 days remaining, consistent with elapsed time. The 1020 reachability
+revision already documented in its banner explains exclusion of the former unreachable finding. Current
+1011 candidates are not tenant-wide; 1021 now finds assigned groups; 1025 reports 21 configured policies;
+1027 reports only informational dynamic groups. Those are current-input observations, not proof of who
+changed the tenant or when; historical raw snapshots are unavailable. No old-test code was changed to force
+these outcomes.
+
+An earlier 1032 rerun passed for 5,000 processed members but skipped sign-ins and reported 6,459 members
+beyond the cap. A later diagnostic timed out at 900 seconds with Graph throttling, superseding that pass.
+A separate single-user read and a filtered 15-user collection read succeeded. Replaced per-member sign-in
+requests with filtered collections of at most 15 IDs, retaining the member cap and existing findings.
+The regression checks the boundary and that every requested member appears in exactly one filter.
+The corrected live run returned all 5,000 requested activity records and flagged 30 members: 23 with
+stale successful sign-ins and seven older accounts with no recorded history. Independent reads confirmed
+all 30 findings. Five sampled null histories remained null on direct reads; a tenant-wide cutoff query
+returned 49 users and none of the 4,976 null-history IDs. Added account creation time: seven null-history
+accounts were older than 90 days and 4,969 were new accounts, too early to judge. No history/age was unknown.
+All seven older null-history accounts were created after April 2020 and stayed null on direct reads.
+Seeded origin was not established; null history alone does not establish how an account was created.
+The report now counts missing-history, new-account, unknown and fallback cases explicitly. When successful
+history is absent, the later interactive/non-interactive attempt is used; this fallback is unit-tested but
+was not present live. The 6,459 memberships reported beyond the member cap remain unchecked.
+Follow-up: the cap is now the `AIGOV.MaxSpendingPolicyMembers` setting (`0` = no cap), skipped members are
+counted once each rather than once per membership, and the result leads with the coverage percentage. A clean
+run past the cap skips as partial coverage instead of passing. Unit-tested; needs a live rerun with the cap
+raised or removed. Done: the uncapped rerun checked 11,445 unique members (see the follow-up rerun below).
+
+### Follow-up rerun (Nov 18, 2026, commit `783b36e`)
+
+Read-only. 14 POSTs, all on the allowlist: six `security/runHuntingQuery`, six Purview `InvokeCommand` with
+`Get-*` cmdlets only, and two Resource Graph queries. Full pack: 18 passed, 18 failed, 5 skipped, 0 errors,
+unchanged. Unit tests 230 passed with the sibling `maester-src` checkout.
+
+| Test | Result | Independent check |
+|---|---|---|
+| 1032 | Uncapped: 11,445 unique members, 64 findings (49 stale, 15 older with no history), about 7 minutes | Membership recount and five direct user reads agreed |
+| 1037 | 421 of 429 counted agents, all platform `Other` | Hunting counts agreed. Portal check: all 421 were vendor catalog agents (no owners, no source agent ID). Test now reports those for information; the same rule run live leaves 1 counted agent, with an Entra identity. Maester run at `269d53e` passed |
+| 1038-1039 | Skipped: two packages, zero tool definitions | Raw definitions agreed. Skip reason now names the packages |
+
+Changes from this rerun: the 1037 platform table now separates drafts and counted agents, 1037 reports vendor
+catalog agents for information, and the 1038/1039 skip reasons name the packages without tool definitions.
+
+### Covered by Maester core (missing from the tables above)
+
+| # | Finding | Existing test | Notes |
+|---|---|---|---|
+| C31 | Unified audit log ingestion on | MT.1172 | MS.SI.6.2 (draft) |
+| C32 | Sensitivity labels published for files used by Copilot | MT.1173 | |
+| C33 | Insider Risk policy for risky AI usage on | MT.1174 | MS.SI.12.3 (draft) |
+| C34 | Enabled, non-simulation DLP policy for the Copilot location | MT.1175, CIS.M365.3.2.3 | `MP.AIGOV.1043` checks which protections its rules turn on |
+| C35 | Retention policy for the Microsoft Copilot location | MT.1176 | Other AI app locations stay manual |
+| C36 | Risky AI agents blocked by Conditional Access | MT.1181 | Equals CISA SCuBA MS.AAD.9.1 (released) |
+
+### Reviewed and not built
+
+| Candidate | Reason |
+|---|---|
+| Agent identities covered only by static Conditional Access includes | Already covered: `MP.AIGOV.1017` reports this as Partial (Medium) |
+| Copilot Studio agent traffic not under Global Secure Access web filtering / prompt injection protection | Prompt policy type not documented in Graph; README manual check |
+| Agent identity with Graph app permissions and no expiring access package | Access package assignment target shape for agent identities not verified |
+| Restricted Content Discovery on unreviewed sites | Needs a per-site business decision; README manual check |
+| Retention for Enterprise AI apps / Other AI apps; Communication Compliance for AI | App identifiers and location values not documented; README manual checks |
+| Copilot Studio public publishing, channels, knowledge protection, threat detection error behavior; Power Platform DLP and tenant isolation; PAYG billing | No Maester connection packs can use (Dataverse reader is internal; no Power Platform admin connection); README manual checks |
+
+### Mapping caveat
+
+The CIS v8.1 and CISA risk-category table above is still this repo's judgment. CIS now publishes official LLM, Agent
+and MCP companion guides; remap against them when you can read the safeguard text. `MS.SI.*` IDs come from an
+unreleased draft and may change before ScubaGear ships the baseline.

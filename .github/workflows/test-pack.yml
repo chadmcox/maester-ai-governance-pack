@@ -14,7 +14,7 @@ name: Test pack
 # PROVISIONAL: Test-MtPack, New-MtPack and the rest of the Maester Packs tooling are not in a
 # published Maester release yet (Maester 3.0 is unreleased). Until Maester 3.0 ships to the
 # PowerShell Gallery, this workflow builds Maester from a pinned commit on main
-# (616559854634e5150dbde69850c4224191635bb1) instead of `Install-Module Maester`, so CI doesn't
+# (512a076de7bb173045a2ebe62b0493d613ddd0b5) instead of `Install-Module Maester`, so CI doesn't
 # silently pick up unrelated upstream changes. Switch this step to
 # `Install-Module Maester -RequiredVersion <pinned 3.x>` once that version is published, and
 # remove the pinned-commit checkout. Bump the pin deliberately if a newer Maester commit is needed.
@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: maester365/maester
-          ref: 616559854634e5150dbde69850c4224191635bb1
+          ref: 512a076de7bb173045a2ebe62b0493d613ddd0b5
           path: maester-src
 
       - name: Validate the pack with Test-MtPack

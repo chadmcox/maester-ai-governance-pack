@@ -1,4 +1,8 @@
 > [!NOTE]
+> **Revalidated** Nov 18, 2026: correctly **Failed** (true positive), reporting three agents built
+> in this tenant with missing or placeholder metadata under the revised ownership scope.
+
+> [!NOTE]
 > **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
 > catalog API was reachable with `CopilotPackages.Read.All` alone). The initial run against the live
 > schema **errored**: `description` is not a valid property on `microsoft.graph.copilotPackageDetail`
