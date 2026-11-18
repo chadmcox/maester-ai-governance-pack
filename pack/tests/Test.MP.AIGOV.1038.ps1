@@ -68,6 +68,13 @@ function Test-MPAIGOV1038 {
         })
     $ToolRows = @($McpPackages | Get-AIGovMcpTool)
     $NoDefinitions = @($ToolRows | Where-Object { $_.FailureReason -eq 'ToolDefinitionsUnavailable' } | Select-Object -ExpandProperty PackageId -Unique)
+    $NoDefinitionNames = @(
+        $ToolRows | Where-Object { $_.FailureReason -eq 'ToolDefinitionsUnavailable' } | Sort-Object -Property PackageId -Unique |
+            ForEach-Object { ConvertTo-AIGovMarkdownCell -Text $(if ([string]::IsNullOrWhiteSpace([string]$_.PackageName)) { $_.PackageId } else { $_.PackageName }) } |
+            Sort-Object
+    )
+    $NoDefinitionList = (@($NoDefinitionNames | Select-Object -First 10) -join ', ') +
+        $(if ($NoDefinitionNames.Count -gt 10) { ", and $($NoDefinitionNames.Count - 10) more" } else { '' })
     $FailedCount = @($ToolRows | Where-Object { $_.Failed -and $_.FailureReason -ne 'ToolDefinitionsUnavailable' } | Select-Object -ExpandProperty PackageId -Unique).Count
 
     if ($McpPackages.Count -gt 0 -and $FailedCount -eq $McpPackages.Count) {
@@ -82,7 +89,7 @@ function Test-MPAIGOV1038 {
 
     # A package that lists only a server URL can't be fingerprinted. Check the rest, but never pass an incomplete check.
     $NoDefinitionsReason = (
-        "$($NoDefinitions.Count) reachable package(s) list an MCP server but no tool definitions in the catalog, so their tools " +
+        "$($NoDefinitions.Count) reachable package(s) list an MCP server but no tool definitions in the catalog ($NoDefinitionList), so their tools " +
         "can't be compared with a baseline. This check doesn't connect to MCP servers."
     )
     if ($Current.Count -eq 0 -and $NoDefinitions.Count -gt 0) {

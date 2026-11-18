@@ -42,7 +42,7 @@ the installed pack -- see the comment in
 | MP.AIGOV.1025 | Spending policy should be scoped to a group and fully configured | Preview | Validated, Graph only |
 | MP.AIGOV.1026 | Enabled spending policy should alert at least two active recipients | Preview | Validated, Graph only |
 | MP.AIGOV.1027 | Group behind a spending policy should be a populated security group without nesting | Preview | Validated, Graph only |
-| MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Validated (5,000-member cap, now configurable), Graph only |
+| MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Validated uncapped (11,445 members), Graph only |
 | MP.AIGOV.1033 | Copilot connectors users can search should only take content from apps you govern | Preview | Validated, Graph only |
 | MP.AIGOV.1034 | AI administration roles should be eligible through PIM and held by a small number of internal users | Preview | Validated, Graph only |
 | MP.AIGOV.1035 | Agent identity blueprints should not authenticate with client secrets | Preview | Validated, Graph only |

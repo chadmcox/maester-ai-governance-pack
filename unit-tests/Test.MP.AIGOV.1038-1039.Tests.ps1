@@ -60,7 +60,7 @@ Describe 'Incomplete MCP metadata' {
         $Fingerprint = @{ ToolName = 'search'; Description = $CleanTool.description; InputSchema = ($CleanTool.inputSchema | ConvertTo-Json -Depth 20 | ConvertFrom-Json); Annotations = ($CleanTool.annotations | ConvertTo-Json | ConvertFrom-Json) } | Get-AIGovMcpToolFingerprint
         Test-MPAIGOV1038 -Baseline @(@{ PackageId = 'p1'; ToolName = 'search'; Fingerprint = $Fingerprint }) | Should -BeNullOrEmpty
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
-            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match '^Partial check' -and $SkippedCustomReason -match '1 reachable package\(s\) list an MCP server but no tool definitions'
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match '^Partial check' -and $SkippedCustomReason -match '1 reachable package\(s\) list an MCP server but no tool definitions in the catalog \(Blocked MCP\)'
         }
     }
 
@@ -177,7 +177,7 @@ Describe 'Test-MPAIGOV1039' {
         )
         Test-MPAIGOV1039 | Should -BeNullOrEmpty
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
-            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'tool definitions'
+            $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'tool definitions in the catalog \(Vendor MCP\)'
         }
     }
 

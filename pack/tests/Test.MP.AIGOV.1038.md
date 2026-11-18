@@ -36,6 +36,9 @@ the test. With no drift but some packages missing definitions, the test skips as
 passing. If no package lists tools, it skips. It does not contact the remote MCP server to obtain missing
 definitions.
 
+Rerun Nov 18, 2026 (commit `783b36e`): still **Skipped**. Two reachable packages, zero tool definitions; an
+independent read of the raw package definitions agreed. The skip reason now names those packages.
+
 #### Remediation action
 
 Review each changed or new tool's definition. If you accept it, update its fingerprint in the baseline. If you

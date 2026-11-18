@@ -12,6 +12,12 @@
 > Earlier per-user sign-in reads throttled or skipped; filtered collections now return all 5,000 records,
 > including `createdDateTime`. The old null-object omission and premature empty-history findings were
 > corrected with account-age checks, explicit summary counts and a last-attempt fallback.
+>
+> **Uncapped rerun** Nov 18, 2026 (commit `783b36e`, `AIGOV.MaxSpendingPolicyMembers` = 0): **Failed**
+> (true positive). 11,445 unique members checked in about 7 minutes; the result did not start with
+> "Partial coverage". 64 findings: 49 stale successful sign-ins and 15 older accounts with no recorded
+> history; 11,379 accounts were too new to judge; none unknown; no last-attempt fallback. An independent
+> membership recount agreed, and five direct user reads confirmed their findings.
 
 > [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.

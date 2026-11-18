@@ -58,8 +58,8 @@ Describe 'Test-MPAIGOV1037' {
             $Result -match 'All 1 live cloud agent' -and
             $Result -match '1 draft agent' -and
             $Result -match '1 agent\(s\) on excluded platforms \(UserPlatform\)' -and
-            $Result -match '\| UserPlatform \| 1 \| 1 \| No \(excluded platform\) \|' -and
-            $Result -match '\| CopilotStudio \| 2 \| 1 \| Yes \|'
+            $Result -match '\| UserPlatform \| 1 \| 0 \| 0 \| 0 \| 1 \| No \(excluded platform\) \|' -and
+            $Result -match '\| CopilotStudio \| 2 \| 1 \| 1 \| 0 \| 1 \| Counted \|'
         }
     }
 

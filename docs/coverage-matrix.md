@@ -297,7 +297,22 @@ was not present live. The 6,459 memberships reported beyond the member cap remai
 Follow-up: the cap is now the `AIGOV.MaxSpendingPolicyMembers` setting (`0` = no cap), skipped members are
 counted once each rather than once per membership, and the result leads with the coverage percentage. A clean
 run past the cap skips as partial coverage instead of passing. Unit-tested; needs a live rerun with the cap
-raised or removed.
+raised or removed. Done: the uncapped rerun checked 11,445 unique members (see the follow-up rerun below).
+
+### Follow-up rerun (Nov 18, 2026, commit `783b36e`)
+
+Read-only. 14 POSTs, all on the allowlist: six `security/runHuntingQuery`, six Purview `InvokeCommand` with
+`Get-*` cmdlets only, and two Resource Graph queries. Full pack: 18 passed, 18 failed, 5 skipped, 0 errors,
+unchanged. Unit tests 230 passed with the sibling `maester-src` checkout.
+
+| Test | Result | Independent check |
+|---|---|---|
+| 1032 | Uncapped: 11,445 unique members, 64 findings (49 stale, 15 older with no history), about 7 minutes | Membership recount and five direct user reads agreed |
+| 1037 | 421 of 429 counted agents, all platform `Other`; no exclusion set | Hunting counts agreed. Whether `Other` agents run as the signed-in user is unproven; schema fields seen don't show it |
+| 1038-1039 | Skipped: two packages, zero tool definitions | Raw definitions agreed. Skip reason now names the packages |
+
+Changes from this rerun: the 1037 platform table now separates drafts and counted agents, and the 1038/1039
+skip reasons name the packages without tool definitions.
 
 ### Covered by Maester core (missing from the tables above)
 

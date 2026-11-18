@@ -116,17 +116,20 @@ AgentsInfo
             Sort-Object -Property Count -Descending |
             Select-Object @{ n = 'Platform'; e = { $_.Name } },
                 @{ n = 'Agents'; e = { $_.Count } },
-                @{ n = 'No Entra identity'; e = { @($_.Group | Where-Object { -not $_.HasEntra }).Count } },
-                @{ n = 'Counted'; e = {
+                @{ n = 'Drafts'; e = { @($_.Group | Where-Object { [string]$_.PublishedStatus -eq 'Draft' }).Count } },
+                @{ n = 'Counted'; e = { @($_.Group | Where-Object { $_.Scope -eq 'InScope' }).Count } },
+                @{ n = 'Counted, no Entra identity'; e = { @($_.Group | Where-Object { $_.Scope -eq 'InScope' -and -not $_.HasEntra }).Count } },
+                @{ n = 'All, no Entra identity'; e = { @($_.Group | Where-Object { -not $_.HasEntra }).Count } },
+                @{ n = 'Platform status'; e = {
                         $Scopes = @($_.Group | Select-Object -ExpandProperty Scope -Unique)
                         if ($Scopes -contains 'Local') { 'No (local agents)' }
                         elseif ($Scopes -contains 'Excluded') { 'No (excluded platform)' }
-                        elseif ($Scopes -contains 'InScope') { 'Yes' }
+                        elseif ($Scopes -contains 'InScope') { 'Counted' }
                         else { 'No (drafts only)' }
                     }
                 }
     )
-    $PlatformTable = $ByPlatform | ConvertTo-AIGovMarkdownTable -Property 'Platform', 'Agents', 'No Entra identity', 'Counted'
+    $PlatformTable = $ByPlatform | ConvertTo-AIGovMarkdownTable -Property 'Platform', 'Agents', 'Drafts', 'Counted', 'Counted, no Entra identity', 'All, no Entra identity', 'Platform status'
 
     $Info = @(
         $Count = @($Rows | Where-Object { $_.Scope -eq 'Local' }).Count

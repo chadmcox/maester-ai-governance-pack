@@ -31,7 +31,15 @@ unregistered agents); NIST 800-53 CM-8; AI RMF GOVERN 1.6.
 > informational. The original query's scalar-column error had incorrectly triggered the table-unavailable skip.
 > 428 of the flagged rows were on the `Other` platform. The platform breakdown, lifecycle and draft filters, and
 > `AIGOV.ExcludedAgentPlatforms` were added afterwards so you can tell unregistered agents from a platform that
-> never uses Entra identities. They're unit-tested; rerun against the live tenant to confirm the new counts.
+> never uses Entra identities.
+>
+> **Rerun** Nov 18, 2026 (commit `783b36e`): **Failed**, 421 of 429 counted agents. An independent hunting
+> query agreed: 434 agents not removed, minus 3 local agents and 2 Copilot Studio drafts. All 421 were on
+> platform `Other`, published to Copilot, Teams, Outlook or Office, with `ToolsAuthenticationType`,
+> `Availability` and `Model` blank. The table doesn't show whether those agents run as the signed-in user, so
+> no platform is excluded. `Other` is a catch-all, so excluding it would also hide real unregistered agents.
+> The live schema uses `Name`, `EntraAgentID`, `EntraBlueprintID` and `Description`, not the documented names;
+> `column_ifexists` handles both.
 
 #### Remediation action
 

@@ -25,6 +25,9 @@ still checked, and any steering text or missing annotation fails the test. With 
 missing definitions, the test skips as a partial check instead of passing, because missing metadata isn't a
 clean description. It does not contact remote MCP servers.
 
+Rerun Nov 18, 2026 (commit `783b36e`): still **Skipped**. Two reachable packages, zero tool definitions; an
+independent read of the raw package definitions agreed. The skip reason now names those packages.
+
 #### Remediation action
 
 Read the flagged tool's full definition. Block the package if the text tries to steer the model. For tools with

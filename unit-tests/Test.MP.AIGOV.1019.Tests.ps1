@@ -125,7 +125,7 @@ Describe 'Test-MPAIGOV1019 high-risk scope list drift check' {
 
     It 'matches the pinned Maester MT.1223 source''s $RiskPaths keys exactly' {
         # .github/workflows/test-pack.yml checks out maester365/maester (pinned commit
-        # 616559854634e5150dbde69850c4224191635bb1) to a `maester-src` directory that sits
+        # 512a076de7bb173045a2ebe62b0493d613ddd0b5) to a `maester-src` directory that sits
         # alongside this repo's own checkout, both under $env:GITHUB_WORKSPACE. Mirror that layout
         # locally (a sibling `maester-src` checkout next to this repo) to exercise this check;
         # elsewhere it skips rather than failing, since the sibling checkout isn't guaranteed.
