@@ -7,14 +7,18 @@ function Test-MPAIGOV1032 {
     applies the member rules from chadmcox/Copilot "Billing Health Check". All are Medium:
       - The account is disabled.
       - The account is a guest (userType Guest).
-      - No successful sign-in for InactiveDays (default 90). Needs signInActivity (AuditLog.Read.All and
-        Microsoft Entra ID P1); if that can't be read, this check is skipped and the result says so.
+      - No successful sign-in for InactiveDays (default 90), falling back to the latest interactive or
+        non-interactive attempt when successful history is absent. Accounts without history are reported
+        only once they are older than that window. Needs signInActivity (AuditLog.Read.All and Microsoft
+        Entra ID P1); if that can't be read, this check is skipped and the result says so.
       - No working Microsoft 365 Copilot license, when the policy turns on a service that needs one
         (LicensedServices, default cowork and code). Working means a license whose SKU includes a Copilot
         service plan, with that plan not disabled and the assignment not in an error state.
     All-users policies are out of scope here (MP.AIGOV.1025 reports them).
     .PARAMETER InactiveDays
-    Days without a successful sign-in before a member is reported. 0 turns the sign-in check off.
+    Days without recorded sign-in activity before a member is reported. Successful activity is preferred;
+    otherwise the latest attempt is used. Accounts with no history must also be older than this window.
+    0 turns the sign-in check off.
     .PARAMETER LicensedServices
     Spending-policy service IDs that only work for people with a Copilot license.
     .PARAMETER CopilotServicePlanIds
@@ -163,16 +167,21 @@ function Test-MPAIGOV1032 {
         return $true
     }
 
-    # Last successful sign-in, batched. Needs AuditLog.Read.All and Entra ID P1.
+    # Read small filtered collections rather than one throttled sign-in request per user.
     $SignIns = @{}
     $SignInCheck = $InactiveDays -gt 0
     if ($SignInCheck) {
         try {
             $Activity = @(
-                Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'users' -UniqueId @($Members.Keys) -Select @('id', 'signInActivity')
+                $MemberIds = @($Members.Keys)
+                for ($Start = 0; $Start -lt $MemberIds.Count; $Start = $Start + 15) {
+                    $Last = [math]::Min($Start + 14, $MemberIds.Count - 1)
+                    $Filter = "id in ('" + ($MemberIds[$Start..$Last] -join "','") + "')"
+                    Invoke-MtGraphRequest -ApiVersion 'v1.0' -RelativeUri 'users' -Filter $Filter -Select @('id', 'createdDateTime', 'signInActivity')
+                }
             )
             foreach ($Item in $Activity) {
-                if ($Item -and $Item.id) { $SignIns[[string]$Item.id] = $Item.signInActivity }
+                if ($Item -and $Item.id) { $SignIns[[string]$Item.id] = $Item }
             }
         } catch {
             Write-Verbose "Couldn't read signInActivity: $($_.Exception.Message)"
@@ -183,6 +192,11 @@ function Test-MPAIGOV1032 {
         $Notes.Add('The sign-in check is turned off (InactiveDays is 0).')
     }
     $Cutoff = [datetime]::UtcNow.AddDays(-$InactiveDays)
+    $OldWithoutHistory = 0
+    $NewWithoutHistory = 0
+    $UnknownHistory = 0
+    $FallbackCount = 0
+    $StaleSignIns = 0
 
     $Findings = [System.Collections.Generic.List[pscustomobject]]::new()
     foreach ($Id in $Members.Keys) {
@@ -193,22 +207,39 @@ function Test-MPAIGOV1032 {
         if (-not [bool]$User.accountEnabled) { $Issues.Add('Account is disabled') }
         if ([string]$User.userType -eq 'Guest') { $Issues.Add('Guest account') }
 
-        if ($SignInCheck -and $SignIns.ContainsKey($Id) -and $null -ne $SignIns[$Id]) {
-            # ConvertFrom-Json may already have turned the ISO 8601 string into a [datetime].
-            $Raw = $SignIns[$Id].lastSuccessfulSignInDateTime
-            $LastDate = [datetime]::MinValue
-            $Parsed = $false
-            if ($Raw -is [datetime]) {
-                $LastDate = $Raw.ToUniversalTime(); $Parsed = $true
-            } elseif (-not [string]::IsNullOrWhiteSpace([string]$Raw)) {
-                $Parsed = [datetime]::TryParse([string]$Raw, [System.Globalization.CultureInfo]::InvariantCulture,
-                    [System.Globalization.DateTimeStyles]::AdjustToUniversal -bor [System.Globalization.DateTimeStyles]::AssumeUniversal, [ref]$LastDate)
+        if ($SignInCheck -and $SignIns.ContainsKey($Id)) {
+            $Record = $SignIns[$Id]
+            $Activity = $Record.signInActivity
+            $UsingFallback = $null -ne $Activity -and [string]::IsNullOrWhiteSpace([string]$Activity.lastSuccessfulSignInDateTime)
+            $RawDates = @($Activity.lastSuccessfulSignInDateTime)
+            if ($UsingFallback) {
+                $FallbackCount++
+                $RawDates = @($Activity.lastSignInDateTime, $Activity.lastNonInteractiveSignInDateTime)
             }
-            if ($null -eq $Raw -or [string]::IsNullOrWhiteSpace([string]$Raw)) {
-                $Issues.Add('No successful sign-in recorded')
-            } elseif ($Parsed -and $LastDate -lt $Cutoff) {
-                $Issues.Add("No successful sign-in for $InactiveDays days (last $($LastDate.ToString('yyyy-MM-dd')))")
+            $RawDates = @($RawDates | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+            $LastDate = $RawDates | ForEach-Object { ConvertTo-AIGovUtcDate -Value $_ } |
+                Sort-Object -Descending | Select-Object -First 1
+            if ($null -ne $LastDate) {
+                if ($LastDate -lt $Cutoff) {
+                    $StaleSignIns++
+                    $Message = if ($UsingFallback) { 'No sign-in attempt' } else { 'No successful sign-in' }
+                    $Issues.Add("$Message for $InactiveDays days (last $($LastDate.ToString('yyyy-MM-dd')))")
+                }
+            } elseif ($RawDates.Count -gt 0) {
+                $UnknownHistory++
+            } else {
+                $Created = ConvertTo-AIGovUtcDate -Value $Record.createdDateTime
+                if ($null -eq $Created) {
+                    $UnknownHistory++
+                } elseif ($Created -lt $Cutoff) {
+                    $OldWithoutHistory++
+                    $Issues.Add('No sign-in recorded')
+                } else {
+                    $NewWithoutHistory++
+                }
             }
+        } elseif ($SignInCheck) {
+            $UnknownHistory++
         }
 
         if ($LicenseCheck -and $Entry.NeedsLicense) {
@@ -231,15 +262,18 @@ function Test-MPAIGOV1032 {
         $Notes.Add("$($Unread.Count) item(s) couldn't be read and aren't reflected in this result: $(($Unread | ForEach-Object { ConvertTo-AIGovMarkdownCell -Text $_ }) -join ', ').")
     }
     $NoteText = if ($Notes.Count -gt 0) { "`n`n" + (($Notes | ForEach-Object { "- $_" }) -join "`n") } else { '' }
+    $ActivitySummary = if ($SignInCheck) {
+        " Sign-in history: $OldWithoutHistory older account(s) with no sign-in recorded; $NewWithoutHistory new accounts, too early to judge; $UnknownHistory account(s) with unknown history or age; $FallbackCount using last-attempt fallback; $StaleSignIns stale activity record(s)."
+    } else { '' }
 
     if ($Findings.Count -eq 0) {
-        Add-MtTestResultDetail -Result "Well done. All $($Members.Count) member(s) of spending-policy groups are enabled, active and licensed where needed.$NoteText"
+        Add-MtTestResultDetail -Result "Well done. No problems were found among $($Members.Count) evaluated spending-policy group member(s).$ActivitySummary$NoteText"
         return $true
     }
 
     $MaxRows = 100
     $Ordered = @($Findings | Sort-Object User)
-    $Result = "Found $($Findings.Count) of $($Members.Count) spending-policy group member(s) who shouldn't be spending credits as they are.$NoteText"
+    $Result = "Found $($Findings.Count) of $($Members.Count) spending-policy group member(s) who shouldn't be spending credits as they are.$ActivitySummary$NoteText"
     $Result += "`n`n| User | Policies | Issues |"
     $Result += "`n| --- | --- | --- |"
     foreach ($Item in ($Ordered | Select-Object -First $MaxRows)) {

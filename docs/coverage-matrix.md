@@ -251,8 +251,11 @@ mapped.
 
 ### Live review (Nov 18, 2026)
 
-The local pack was run with the pinned Maester source, delegated connections, Graph batching disabled,
-and raw evidence kept outside tracked files. A skip or empty inventory is not validation of the missing
+The local pack was run with the pinned Maester source and delegated connections, with raw evidence kept
+outside tracked files. Graph batching was not disabled: the 1032 diagnostic used batches. Historical
+batch bodies were not captured; the accepted source audit shows GET-only inner requests for this test.
+A directory-audit read for the signed-in user over the live-run window returned zero entries. Request-body
+logging was verified offline before resuming. A skip or empty inventory is not validation of the missing
 branch. The following observations limit the framework claims:
 
 | Tests | Confirmed or corrected | Remaining limit |
@@ -276,10 +279,21 @@ revision already documented in its banner explains exclusion of the former unrea
 changed the tenant or when; historical raw snapshots are unavailable. No old-test code was changed to force
 these outcomes.
 
-The 1032 rerun completed after raising the local timeout from 120 to 900 seconds. Its pass covers only
-5,000 processed members: 6,459 members were reported beyond the cap, and the bulk sign-in read was
-skipped. A separate single-user sign-in read succeeded; the bulk failure's cause is unresolved, not
-proven to be licensing. The earlier five-member validation is not comparable to this larger, partial run.
+An earlier 1032 rerun passed for 5,000 processed members but skipped sign-ins and reported 6,459 members
+beyond the cap. A later diagnostic timed out at 900 seconds with Graph throttling, superseding that pass.
+A separate single-user read and a filtered 15-user collection read succeeded. Replaced per-member sign-in
+requests with filtered collections of at most 15 IDs, retaining the member cap and existing findings.
+The regression checks the boundary and that every requested member appears in exactly one filter.
+The corrected live run returned all 5,000 requested activity records and flagged 30 members: 23 with
+stale successful sign-ins and seven older accounts with no recorded history. Independent reads confirmed
+all 30 findings. Five sampled null histories remained null on direct reads; a tenant-wide cutoff query
+returned 49 users and none of the 4,976 null-history IDs. Added account creation time: seven null-history
+accounts were older than 90 days and 4,969 were new accounts, too early to judge. No history/age was unknown.
+All seven older null-history accounts were created after April 2020 and stayed null on direct reads.
+Seeded origin was not established; null history alone does not establish how an account was created.
+The report now counts missing-history, new-account, unknown and fallback cases explicitly. When successful
+history is absent, the later interactive/non-interactive attempt is used; this fallback is unit-tested but
+was not present live. The 6,459 memberships reported beyond the member cap remain unchecked.
 
 ### Covered by Maester core (missing from the tables above)
 

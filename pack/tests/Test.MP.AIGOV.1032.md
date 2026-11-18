@@ -1,10 +1,16 @@
 > [!NOTE]
-> **Partial live rerun** Nov 18, 2026: the initial 120-second harness timeout was removed by
-> allowing 900 seconds; the test completed in about three minutes and **Passed** for 5,000
-> processed members. It reported 6,459 members beyond `MaxMembers` as unchecked and skipped
-> the bulk sign-in read. A separate single-user sign-in probe succeeded, so the bulk-read
-> failure is not established to be a missing license or scope. This is not full membership
-> or inactivity validation, and is not directly comparable with the earlier five-member run.
+> **Validated** Nov 18, 2026 against a real Microsoft 365 test tenant. The corrected run **Failed**
+> (true positive): 30 of 5,000 evaluated members were flagged, comprising 23 stale successful sign-ins
+> and seven older accounts with no recorded history. Independent reads confirmed all 30 findings.
+> Of 4,976 null-history records, 4,969 were new accounts, too early to judge; none had unknown age.
+> Five direct new-account reads retained null history. A tenant-wide stale-history query returned 49
+> users, with no overlap among the null-history IDs. All seven older null-history accounts also retained
+> null history on direct reads and were created after April 2020. Seeded origin was not established.
+> The report identifies 6,459 memberships beyond `MaxMembers` as unchecked; this is capped coverage,
+> not proof of all tenant members. No last-attempt fallback case was present live; unit tests cover it.
+> Earlier per-user sign-in reads throttled or skipped; filtered collections now return all 5,000 records,
+> including `createdDateTime`. The old null-object omission and premature empty-history findings were
+> corrected with account-age checks, explicit summary counts and a last-attempt fallback.
 
 > [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
@@ -22,14 +28,22 @@ Each one reported is Medium:
 
 - The account is disabled.
 - The account is a guest.
-- No successful sign-in for `InactiveDays` (default 90). This needs `signInActivity` (AuditLog.Read.All and
-  Microsoft Entra ID P1). If it can't be read, the check is skipped and the result says so.
+- No successful sign-in for `InactiveDays` (default 90). When successful history is absent, use the later
+  interactive or non-interactive attempt. Attempt timestamps include unsuccessful attempts and are not
+  proof of successful use; successful history was not backfilled before December 1, 2023.
+  If all history is blank, flag `No sign-in recorded` only when `createdDateTime` is older than the window.
+  New accounts are counted as `new accounts, too early to judge`; missing age or unreadable history is
+  counted as unknown, not silently treated as active. The summary includes these counts, fallback usage
+  and stale activity. This needs `signInActivity` (AuditLog.Read.All and Microsoft Entra ID P1).
+  If it can't be read, the check is skipped and the result says so.
 - No working Microsoft 365 Copilot license, when the policy turns on a service that needs one
   (`LicensedServices`, default `cowork` and `code`). Working means the license's SKU includes a Copilot service
   plan, that plan isn't disabled, and the assignment isn't in an error state.
 
 All-users policies aren't checked here; `MP.AIGOV.1025` reports them. At most `MaxMembers` (default 5,000)
 unique members are checked per run, and the table shows the first 100.
+Sign-in reads use filtered collections of at most 15 IDs, with paging handled by Maester, rather than a
+separate sign-in request for every member.
 
 #### Remediation action
 
@@ -40,6 +54,7 @@ credits. Assign a working Copilot license to anyone who should use a licensed se
 
 - [Manage Copilot Credits spending policies](https://learn.microsoft.com/copilot/implement/usage-based-billing-manage-copilot-credits)
 - [signInActivity resource type](https://learn.microsoft.com/graph/api/resources/signinactivity)
+- [Manage inactive user accounts](https://learn.microsoft.com/entra/identity/monitoring-health/howto-manage-inactive-user-accounts)
 
 <!--- Results --->
 %TestResult%
