@@ -1,4 +1,12 @@
 > [!NOTE]
+> **Partial live rerun** Nov 18, 2026: the initial 120-second harness timeout was removed by
+> allowing 900 seconds; the test completed in about three minutes and **Passed** for 5,000
+> processed members. It reported 6,459 members beyond `MaxMembers` as unchecked and skipped
+> the bulk sign-in read. A separate single-user sign-in probe succeeded, so the bulk-read
+> failure is not established to be a missing license or scope. This is not full membership
+> or inactivity validation, and is not directly comparable with the earlier five-member run.
+
+> [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
 > The run correctly **Failed** (true positive): 4 of 5 spending-policy group members were flagged
 > (disabled account, guest account, missing Copilot license, stale sign-in). Confirms `serviceSettings`,

@@ -1,4 +1,10 @@
 > [!NOTE]
+> **Revalidated** Nov 18, 2026: correctly **Failed** (true positive), with one credential inside the
+> 30-day window. Independent reads found two active secrets and no certificates. One secret now
+> has about 30 days remaining versus 42 days at the earlier validation date, consistent with elapsed
+> time rather than changed test logic.
+
+> [!NOTE]
 > **Validated** 2026-11-06 against a real Microsoft 365 test tenant (F7-licensed), and re-validated
 > after adding certificate (`keyCredentials`) support. The run correctly **Passed** (true
 > negative): 6 Agent Identity Blueprints were found, 2 of which have an active client secret, and

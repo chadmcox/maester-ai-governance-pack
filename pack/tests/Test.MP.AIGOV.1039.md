@@ -15,6 +15,13 @@ language, validate tool selection); NIST 800-53 SI-10.
 > [!NOTE]
 > **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
 > tenant and check the result before relying on it.
+>
+> Live attempt Nov 18, 2026: two reachable packages supplied no tool definitions, descriptions or
+> annotations. Corrected an unsupported pass over zero parsed tools to an explicit skip.
+> There were no available tool descriptions to review; steering-pattern accuracy remains unvalidated.
+
+If any reachable package omits `mcpToolDescription.tools`, this test skips rather than treating missing
+metadata as clean descriptions. It does not contact remote MCP servers.
 
 #### Remediation action
 

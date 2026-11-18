@@ -11,8 +11,10 @@ may not resolve at tenant level. `MT.1173` checks that labels are published.
 Framework: CISA draft SCuBA agent baseline MS.SI.6.1, 6.3, 7.2, 7.4; NIST 800-53 AC-16.
 
 > [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
-> tenant and check the result before relying on it.
+> **Validated** Nov 18, 2026 against a live test tenant. Correctly **Passed** (true negative):
+> 8 root labels included 7 inline sublabels; 4 of the 15 enabled labels applied to sites or groups,
+> with no duplicate full names. Root `applicableTo` values were strings; all root `isDefault`
+> properties were present and false.
 
 #### Remediation action
 

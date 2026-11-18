@@ -1,4 +1,9 @@
 > [!NOTE]
+> **Live rerun** Nov 18, 2026 **Passed** for 21 enabled, group-scoped, configured policies. This
+> differs from the earlier three-policy findings below; the current result is consistent with the
+> returned configuration, not proof of when or how those policies were changed.
+
+> [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
 > The run correctly **Failed** (true positive): 10 problems across 3 group-scoped "Test Cowork ..."
 > policies (disabled status, no group linked, billing method not set, a per-user limit below the default

@@ -15,12 +15,12 @@ the installed pack -- see the comment in
 
 | ID | Title | Lifecycle | Status |
 | --- | --- | --- | --- |
-| MP.AIGOV.1001 | Agent catalog adoption is below a configurable threshold over the D90 report period | Preview | Validated, Graph only |
+| MP.AIGOV.1001 | Agent catalog adoption is below a configurable threshold over the D90 report period | Preview | Adoption branch not yet validated, Graph only |
 | MP.AIGOV.1002 | Blocked package has an open pending install or consent request | Preview | Validated, Graph only |
 | MP.AIGOV.1003 | Agent is assigned directly to users instead of via a group | Preview | Validated, Graph only |
 | MP.AIGOV.1004 | Agent identity, blueprint, or blueprint principal has exactly one sponsor and zero owners | Preview | Validated, Graph only |
 | MP.AIGOV.1005 | Classic Copilot Studio service principal has no corresponding Agent ID registration | Preview | Validated, Graph only |
-| MP.AIGOV.1006 | Agent display name or description is empty or a placeholder value | Preview | Revised, re-validation pending, Graph only |
+| MP.AIGOV.1006 | Agent display name or description is empty or a placeholder value | Preview | Validated, Graph only |
 | MP.AIGOV.1007 | Custom or external package is available or deployed tenant-wide | Preview | Validated, Graph only |
 | MP.AIGOV.1008 | MCP server endpoint should not be reachable over plain HTTP | Preview | Validated, Graph only |
 | MP.AIGOV.1009 | Agent Identity Blueprint credential should not be nearing expiration | Preview | Validated, Graph only |
@@ -29,32 +29,32 @@ the installed pack -- see the comment in
 | MP.AIGOV.1012 | Agent skill should have a clear description, and should not be exposed to Copilot tenant-wide without review | Preview | Validated, Graph only |
 | MP.AIGOV.1013 | Enabled spending policy should have a credit ceiling | Preview | Validated, Graph only |
 | MP.AIGOV.1014 | Group backing a spending policy should have owners and a description | Preview | Validated, Graph only |
-| MP.AIGOV.1015 | Spending policy cap should not be overridden by a more permissive overlapping policy | Preview | Revised, re-validation pending, Graph only |
+| MP.AIGOV.1015 | Spending policy cap should not be overridden by a more permissive overlapping policy | Preview | Validated, Graph only |
 | MP.AIGOV.1016 | MCP server should not use weak or no authentication | Preview | Validated, Graph only |
 | MP.AIGOV.1017 | Conditional Access should cover agent identities | Preview | Validated, Graph only |
 | MP.AIGOV.1018 | Agent identity currently at risk should be remediated or dismissed | Preview | Validated, Graph only |
 | MP.AIGOV.1019 | Agent identity should not have user-consented delegated permissions | Preview | Validated, Graph only |
-| MP.AIGOV.1020 | Custom agent or tool that nobody uses should be blocked or removed | Preview | Revised, re-validation pending, Graph only |
-| MP.AIGOV.1021 | Group an agent or tool is assigned to should exist, have two owners and a description | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1022 | Agent identity should not hold broad Microsoft Graph write permissions | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1023 | Agent identity and blueprint should have a clear name and description | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1024 | Classic Copilot Studio service principal should have an owner and be in use | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1025 | Spending policy should be scoped to a group and fully configured | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1026 | Enabled spending policy should alert at least two active recipients | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1027 | Group behind a spending policy should be a populated security group without nesting | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1020 | Custom agent or tool that nobody uses should be blocked or removed | Preview | Validated, Graph only |
+| MP.AIGOV.1021 | Group an agent or tool is assigned to should exist, have two owners and a description | Preview | Validated, Graph only |
+| MP.AIGOV.1022 | Agent identity should not hold broad Microsoft Graph write permissions | Preview | Validated, Graph only |
+| MP.AIGOV.1023 | Agent identity and blueprint should have a clear name and description | Preview | Validated, Graph only |
+| MP.AIGOV.1024 | Classic Copilot Studio service principal should have an owner and be in use | Preview | Validated (empty-inventory case), Graph only |
+| MP.AIGOV.1025 | Spending policy should be scoped to a group and fully configured | Preview | Validated, Graph only |
+| MP.AIGOV.1026 | Enabled spending policy should alert at least two active recipients | Preview | Validated, Graph only |
+| MP.AIGOV.1027 | Group behind a spending policy should be a populated security group without nesting | Preview | Validated, Graph only |
+| MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Partially validated (member cap; sign-ins unavailable), Graph only |
 | MP.AIGOV.1033 | Copilot connectors users can search should only take content from apps you govern | Preview | Validated, Graph only |
-| MP.AIGOV.1034 | AI administration roles should be eligible through PIM and held by a small number of internal users | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1035 | Agent identity blueprints should not authenticate with client secrets | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1036 | Enabled agent identities should have at least one active sponsor | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1037 | Agents discovered by Microsoft Defender should have a Microsoft Entra identity | Preview | Not yet validated, Graph (advanced hunting) |
+| MP.AIGOV.1034 | AI administration roles should be eligible through PIM and held by a small number of internal users | Preview | Validated, Graph only |
+| MP.AIGOV.1035 | Agent identity blueprints should not authenticate with client secrets | Preview | Validated, Graph only |
+| MP.AIGOV.1036 | Enabled agent identities should have at least one active sponsor | Preview | Validated, Graph only |
+| MP.AIGOV.1037 | Agents discovered by Microsoft Defender should have a Microsoft Entra identity | Preview | Validated, Graph (advanced hunting) |
 | MP.AIGOV.1038 | MCP tools should match the definitions you approved | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1039 | MCP tool descriptions should describe the tool, not instruct the model | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1040 | Sensitivity labels should include a sites and groups label and use unique names | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1040 | Sensitivity labels should include a sites and groups label and use unique names | Preview | Validated, Graph only |
 | MP.AIGOV.1041 | Agent identity blueprints from other organizations should come from a verified publisher | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1042 | Web search in Copilot should be off, or limited to Web mode | Preview | Not yet validated, Graph (delegated only) |
+| MP.AIGOV.1042 | Web search in Copilot should be off, or limited to Web mode | Preview | Validated (unconfigured-policy case), Graph (delegated only) |
 | MP.AIGOV.1043 | Copilot DLP policies should block sensitive prompts, labeled content, and web search for sensitive prompts | Preview | Not yet validated, Security & Compliance |
-| MP.AIGOV.1044 | Copilot interaction audit records should be retained for at least your required period | Preview | Not yet validated, Security & Compliance |
+| MP.AIGOV.1044 | Copilot interaction audit records should be retained for at least your required period | Preview | Validated (missing-policy case), Security & Compliance |
 | MP.AIGOV.1045 | Azure OpenAI and AI Services accounts should require Entra auth, restrict network access and be covered by Defender for AI | Preview | Not yet validated, Azure |
 
 **Scope of the connector checks.** MP.AIGOV.1007, 1008, 1010, 1011, 1016, 1038 and 1039 only report on catalog

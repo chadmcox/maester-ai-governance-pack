@@ -249,6 +249,38 @@ mapped.
 | G38 | CopilotInteraction audit records kept less than required | `MP.AIGOV.1044` | S&C `Get-UnifiedAuditLogRetentionPolicy` | MS.SI.5.1, 11.4 (draft); AU-11 |
 | G39 | Azure OpenAI / AI Services account allows key auth or public access, or Defender for AI Services is off | `MP.AIGOV.1045` | Azure Resource Graph + ARM `Microsoft.Security/pricings/AI` | IA-2, SC-7, SI-4 |
 
+### Live review (Nov 18, 2026)
+
+The local pack was run with the pinned Maester source, delegated connections, Graph batching disabled,
+and raw evidence kept outside tracked files. A skip or empty inventory is not validation of the missing
+branch. The following observations limit the framework claims:
+
+| Tests | Confirmed or corrected | Remaining limit |
+|---|---|---|
+| 1034 | 104 active assignments were `Assigned` without an end date; all three roles exceeded three holders. No eligible schedule instances were returned. Expanded users omitted `userType` and nested selection failed; added explicit user reads. Independent reads found 58 distinct member users. | No guest or app assignment was present. |
+| 1035-1036 | Two of six blueprints had active secrets; the application federated-credentials path worked for the derived blueprint type. All 11 enabled identities had enabled user sponsors. | Certificate and inactive-sponsor cases were not present. |
+| 1037 | Corrected case-sensitive hunting columns to `Name`, `EntraAgentID`, `EntraBlueprintID`, with aliases preserving result fields. Independent and corrected test results agreed: 421 of 431 cloud rows had neither Entra identifier; three local rows were informational. Query errors no longer impersonate a missing-table/license skip. | A populated table does not exercise the unavailable-table case. |
+| 1038-1039 | Both reachable MCP packages supplied only a server URL, with no tool definitions. Corrected the unsupported zero-tool pass and unusable baseline to explicit missing-metadata skips, including partial metadata coverage. | Live fingerprint approval/change/stability and manual steering-hit review could not run; no remote MCP server was contacted. |
+| 1040 | Eight roots and seven inline sublabels; four of 15 enabled labels applied to sites/groups. `applicableTo` was a string; root `isDefault` values were false. | No duplicate-name case was present. |
+| 1041 | `$select=verifiedPublisher` succeeded on eight blueprint principals, but every publisher ID was empty. Added explicit skips for unsupported selection or all-empty IDs instead of inferring publisher verification. | No foreign principal or populated publisher ID was available; publisher classification remains unvalidated. |
+| 1042 | Raw singleton response contained `value=null`, `policyId=null`, matching the user's Apps admin center confirmation of Not configured. Disabled Maester paging to preserve the scalar setting and policy metadata rather than unwrapping `value`. | No configured setting value was available live. |
+| 1043 | Five policies, nine rules; the only Copilot policy was simulation. Actual `Locations` was a JSON string containing `Copilot.M365`; the rule had a sensitive-information array and `RestrictAccess` `UploadText=Block`. The user confirmed simulation and prompt blocking in Purview. Updated synthetic fixtures, prompt-action matching, and same-action block pairing. | The live skip is not proof of enforced protections. |
+| 1044 | Independent native command returned zero retention policies, confirming the missing-policy finding. | `RecordTypes`, `Enabled` availability and duration values cannot be checked without an object. |
+| 1045 | Resource Graph returned no accounts, and independent subscription enumeration found zero accessible subscriptions. | The empty-inventory pass proves neither account configuration nor pricing; no subscription was available for a pricing GET. |
+
+Earlier-test outcome changes were compared with their dated banners. For 1009, one secret moved from outside
+the 30-day window to approximately 30 days remaining, consistent with elapsed time. The 1020 reachability
+revision already documented in its banner explains exclusion of the former unreachable finding. Current
+1011 candidates are not tenant-wide; 1021 now finds assigned groups; 1025 reports 21 configured policies;
+1027 reports only informational dynamic groups. Those are current-input observations, not proof of who
+changed the tenant or when; historical raw snapshots are unavailable. No old-test code was changed to force
+these outcomes.
+
+The 1032 rerun completed after raising the local timeout from 120 to 900 seconds. Its pass covers only
+5,000 processed members: 6,459 members were reported beyond the cap, and the bulk sign-in read was
+skipped. A separate single-user sign-in read succeeded; the bulk failure's cause is unresolved, not
+proven to be licensing. The earlier five-member validation is not comparable to this larger, partial run.
+
 ### Covered by Maester core (missing from the tables above)
 
 | # | Finding | Existing test | Notes |

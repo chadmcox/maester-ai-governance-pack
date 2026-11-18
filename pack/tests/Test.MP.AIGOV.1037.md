@@ -2,6 +2,10 @@ Reconciles Microsoft Defender's agent inventory with Microsoft Entra. Runs an ad
 (`POST /security/runHuntingQuery`, via Maester's `Invoke-MtGraphSecurityQuery`) against the `AgentsInfo` table,
 latest record per agent, deleted agents dropped.
 
+The query aliases the case-sensitive source columns `Name`, `EntraAgentID` and `EntraBlueprintID` to
+`AgentName`, `EntraAgentId` and `EntraBlueprintId`. A missing `AgentsInfo` table skips with the Agent 365
+prerequisite message; other query/schema errors are reported as errors, not mistaken for a missing license.
+
 A cloud agent fails when both `EntraAgentId` and `EntraBlueprintId` are empty: Defender sees it, but it has no Entra
 identity to govern with Conditional Access, sponsors or ID Protection. Agents on the `LocalAgents` platform (tools
 Defender for Endpoint found on devices) are reported for information only.
@@ -13,8 +17,11 @@ Framework: CISA/NSA *Careful Adoption of Agentic AI Services* (trusted registry 
 unregistered agents); NIST 800-53 CM-8; AI RMF GOVERN 1.6.
 
 > [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
-> tenant and check the result before relying on it.
+> **Validated** Nov 18, 2026 against a live test tenant after correcting the source-column names.
+> Correctly **Failed** (true positive): independent hunting returned 434 latest nondeleted agents,
+> including 3 `LocalAgents`, 3 `Copilot Studio` and 428 `Other` rows. Of 431 cloud rows, 421 had
+> neither Entra identifier. The corrected Maester run reports the same finding; local rows remain
+> informational. The original query's scalar-column error had incorrectly triggered the table-unavailable skip.
 
 #### Remediation action
 

@@ -13,6 +13,11 @@ Framework: NIST 800-53 IA-2, SC-7, SI-4.
 > [!NOTE]
 > **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
 > tenant and check the result before relying on it.
+>
+> Live attempt Nov 18, 2026 returned no matching AI accounts, and an independent subscription
+> enumeration returned zero accessible subscriptions. The empty-inventory pass is not proof of
+> account hardening or Defender coverage. No subscription was available for a pricing GET;
+> `disableLocalAuth`, `publicNetworkAccess`, and `pricingTier` remain unvalidated.
 
 #### Remediation action
 

@@ -13,8 +13,11 @@ skips in an app-only run. It returns 502 when a tenant has too many group-level 
 Framework: CISA draft SCuBA agent baseline MS.SI.10.3; NIST 800-53 AC-4.
 
 > [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
-> tenant and check the result before relying on it.
+> **Validated** Nov 18, 2026 against a live test tenant for the unconfigured-policy case. Correctly
+> **Failed** (true positive): raw `value=null` and `policyId=null` matched the user's confirmation
+> that Apps admin center shows Not configured. The singleton request now disables paging as well
+> as caching; otherwise Maester unwraps scalar `value` and loses the complete policy object.
+> Configured values remain covered by unit tests, not live observations.
 
 #### Remediation action
 

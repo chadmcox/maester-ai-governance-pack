@@ -1,4 +1,9 @@
 > [!NOTE]
+> **Live rerun** Nov 18, 2026 **Failed**, reporting seven assigned-group problems. Unlike the prior
+> vacuous pass, current input includes assigned groups. This PR did not change this test's code;
+> without historical raw snapshots, the tenant-change history cannot be independently established.
+
+> [!NOTE]
 > **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
 > The run correctly **Passed**: no agent or tool in this tenant is assigned to a group, so this is a
 > vacuous true negative — the deleted-group, owner-count and description checks themselves weren't

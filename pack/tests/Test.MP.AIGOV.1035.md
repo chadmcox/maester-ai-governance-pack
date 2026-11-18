@@ -11,8 +11,10 @@ Framework: CISA draft SCuBA agent baseline MS.SI.2.1 (SHALL use federated creden
 secrets); CISA/NSA *Careful Adoption of Agentic AI Services* (replace static, long-lived secrets); NIST 800-53 IA-5.
 
 > [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
-> tenant and check the result before relying on it.
+> **Validated** Nov 18, 2026 against a live test tenant. Correctly **Failed** (true positive):
+> 2 of 6 blueprints had an active password credential. Independent reads confirmed that
+> `applications/{id}/federatedIdentityCredentials` works for this derived type; two blueprints
+> returned one federated credential each. No certificate credentials were present.
 
 #### Remediation action
 

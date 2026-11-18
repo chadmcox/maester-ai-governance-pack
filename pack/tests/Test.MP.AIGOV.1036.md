@@ -13,8 +13,9 @@ zero owners.
 Framework: CISA draft SCuBA agent baseline MS.SI.3.1 (every agent SHALL have a sponsor and an owner); NIST 800-53 AC-2.
 
 > [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
-> tenant and check the result before relying on it.
+> **Validated** Nov 18, 2026 against a live test tenant. Correctly **Passed** (true negative):
+> all 11 enabled agent identities had one sponsor. Independent reads of the derived-type sponsor
+> navigation returned `@odata.type` `#microsoft.graph.user` and `accountEnabled=true` for all 11.
 
 #### Remediation action
 

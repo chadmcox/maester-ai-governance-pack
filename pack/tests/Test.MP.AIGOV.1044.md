@@ -13,8 +13,10 @@ unified audit log is on.
 Framework: CISA draft SCuBA agent baseline MS.SI.5.1, 11.4; NIST 800-53 AU-11.
 
 > [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
-> tenant and check the result before relying on it.
+> **Validated** Nov 18, 2026 against a live test tenant for the missing-policy case. Correctly
+> **Failed** (true positive): an independent `Get-UnifiedAuditLogRetentionPolicy` returned zero
+> policies. With no objects, `RecordTypes`, presence of `Enabled`, and `RetentionDuration` value
+> shapes could not be established; explicit-policy classification remains unvalidated.
 
 #### Remediation action
 

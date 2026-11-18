@@ -25,6 +25,13 @@ currency); CIS Controls v8.1 MCP Companion Guide; NIST 800-53 CM-2, CM-3.
 > [!NOTE]
 > **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
 > tenant and check the result before relying on it.
+>
+> Live attempt Nov 18, 2026: both reachable MCP packages exposed only `mcpServerUrl`, not tool
+> definitions. The test now skips explicitly rather than printing an empty baseline as usable
+> evidence. Baseline approval, changed fingerprints and repeated-run stability remain unvalidated.
+
+If any reachable package omits `mcpToolDescription.tools`, the catalog does not provide enough data for a
+complete baseline and this test skips. It does not contact the remote MCP server to obtain missing definitions.
 
 #### Remediation action
 
