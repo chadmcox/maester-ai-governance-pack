@@ -41,7 +41,8 @@ Describe 'Test-MPAIGOV1037' {
             $Query -cmatch 'column_ifexists\("AgentName",\s*column_ifexists\("Name"' -and
             $Query -cmatch 'column_ifexists\("EntraAgentId",\s*column_ifexists\("EntraAgentID"' -and
             $Query -cmatch 'column_ifexists\("EntraBlueprintId",\s*column_ifexists\("EntraBlueprintID"' -and
-            $Query -match '!in~\s*\("Deleted",\s*"Uninstalled",\s*"Blocked"\)'
+            $Query -match '!in~\s*\("Deleted",\s*"Uninstalled",\s*"Blocked"\)' -and
+            $Query -match 'HasOwners' -and $Query -match 'HasSourceId'
         }
     }
 
@@ -61,6 +62,28 @@ Describe 'Test-MPAIGOV1037' {
             $Result -match '\| UserPlatform \| 1 \| 0 \| 0 \| 0 \| 1 \| No \(excluded platform\) \|' -and
             $Result -match '\| CopilotStudio \| 2 \| 1 \| 1 \| 0 \| 1 \| Counted \|'
         }
+    }
+
+    It 'reports owner-less, source-less Other agents as vendor catalog agents, not findings' {
+        Mock Invoke-MtGraphSecurityQuery {
+            @(
+                @{ AgentId = 'c1'; AgentName = 'Vendor app'; Platform = 'Other'; EntraAgentId = ''; EntraBlueprintId = ''; PublishedStatus = 'Published'; HasOwners = $false; HasSourceId = $false },
+                @{ AgentId = 'c2'; AgentName = 'Frontier agent'; Platform = 'Other'; EntraAgentId = 'ea2'; EntraBlueprintId = 'bp2'; PublishedStatus = 'Published'; HasOwners = $false; HasSourceId = $false }
+            )
+        }
+        Test-MPAIGOV1037 | Should -Be $true
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Result -match '2 vendor agent\(s\) from the Microsoft 365 agent catalog' -and
+            $Result -match '\| Other \| 2 \| 0 \| 0 \| 0 \| 1 \| No \(vendor catalog agents\) \|'
+        }
+    }
+
+    It 'still counts an Other agent that has owners or a source agent ID' {
+        Mock Invoke-MtGraphSecurityQuery {
+            @(@{ AgentId = 'c3'; AgentName = 'Owned agent'; Platform = 'Other'; EntraAgentId = ''; EntraBlueprintId = ''; PublishedStatus = 'Published'; HasOwners = $true; HasSourceId = $false })
+        }
+        Test-MPAIGOV1037 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Severity -eq 'Medium' -and $Result -match 'Owned agent \| Other \| c3' }
     }
 
     It 'caps the listed rows at MaxRows and says how many more there are' {

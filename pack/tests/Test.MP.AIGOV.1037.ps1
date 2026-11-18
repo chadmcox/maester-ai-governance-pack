@@ -16,6 +16,11 @@ function Test-MPAIGOV1037 {
     but it has no Entra agent identity, blueprint or enterprise application to govern with
     Conditional Access, sponsors or ID Protection.
 
+    Agents on platform 'Other' with no owners and no source agent ID are vendor agents from the
+    Microsoft 365 agent catalog (store apps such as declarative agents). They run inside Copilot, are
+    governed through the catalog, and don't get an Entra agent identity, so they're counted for
+    information only. Vendor agents that act on their own, such as Frontier agents, do have one.
+
     Some platforms list agents that run as the signed-in user and never get an Entra agent identity
     by design. The result always includes a count by Platform. After reviewing it, list those
     platforms in the AIGOV.ExcludedAgentPlatforms setting; their agents are then counted for
@@ -68,9 +73,12 @@ AgentsInfo
     EntraAgentId_ = tostring(column_ifexists("EntraAgentId", column_ifexists("EntraAgentID", ""))),
     EntraBlueprintId_ = tostring(column_ifexists("EntraBlueprintId", column_ifexists("EntraBlueprintID", ""))),
     LifecycleStatus_ = tostring(column_ifexists("LifecycleStatus", "")),
-    PublishedStatus_ = tostring(column_ifexists("PublishedStatus", ""))
+    PublishedStatus_ = tostring(column_ifexists("PublishedStatus", "")),
+    Owners_ = tostring(column_ifexists("Owners", "")),
+    SourceAgentId_ = tostring(column_ifexists("SourceAgentId", ""))
 | where LifecycleStatus_ !in~ ("Deleted", "Uninstalled", "Blocked")
-| project AgentId, AgentName = AgentName_, Platform, EntraAgentId = EntraAgentId_, EntraBlueprintId = EntraBlueprintId_, PublishedStatus = PublishedStatus_
+| project AgentId, AgentName = AgentName_, Platform, EntraAgentId = EntraAgentId_, EntraBlueprintId = EntraBlueprintId_, PublishedStatus = PublishedStatus_,
+    HasOwners = Owners_ !in ("", "[]", "{}", "null"), HasSourceId = isnotempty(SourceAgentId_)
 '@
 
     try {
@@ -100,6 +108,7 @@ AgentsInfo
                     if ([string]$_.Platform -eq 'LocalAgents') { 'Local' }
                     elseif ([string]$_.Platform -in $ExcludedPlatforms) { 'Excluded' }
                     elseif ([string]$_.PublishedStatus -eq 'Draft') { 'Draft' }
+                    elseif ([string]$_.Platform -eq 'Other' -and -not ($_.HasOwners -eq $true) -and -not ($_.HasSourceId -eq $true)) { 'Catalog' }
                     else { 'InScope' }
                 }
             }
@@ -125,6 +134,7 @@ AgentsInfo
                         if ($Scopes -contains 'Local') { 'No (local agents)' }
                         elseif ($Scopes -contains 'Excluded') { 'No (excluded platform)' }
                         elseif ($Scopes -contains 'InScope') { 'Counted' }
+                        elseif ($Scopes -contains 'Catalog') { 'No (vendor catalog agents)' }
                         else { 'No (drafts only)' }
                     }
                 }
@@ -136,10 +146,17 @@ AgentsInfo
         if ($Count -gt 0) { "$Count local agent(s) on endpoints (Platform 'LocalAgents') are listed for information; review them in the Defender portal under AI assets." }
         $Count = @($Rows | Where-Object { $_.Scope -eq 'Draft' }).Count
         if ($Count -gt 0) { "$Count draft agent(s) aren't counted until they're published." }
+        $Count = @($Rows | Where-Object { $_.Scope -eq 'Catalog' }).Count
+        if ($Count -gt 0) { "$Count vendor agent(s) from the Microsoft 365 agent catalog (platform 'Other', no owners or source agent ID) aren't counted; govern them in the catalog (MP.AIGOV.1007)." }
         $Count = @($Rows | Where-Object { $_.Scope -eq 'Excluded' }).Count
         if ($Count -gt 0) { "$Count agent(s) on excluded platforms ($($ExcludedPlatforms -join ', ')) aren't counted." }
     ) -join ' '
     $Footer = $(if ($Rows.Count -gt 0) { "`n`nAgents by platform:`n`n$PlatformTable" } else { '' }) + $(if ($Info) { "`n`n$Info" } else { '' })
+
+    if ($InScope.Count -eq 0) {
+        Add-MtTestResultDetail -Result "Well done. Defender's inventory has no published cloud agents that need a Microsoft Entra agent identity.$Footer"
+        return $true
+    }
 
     if ($Unregistered.Count -eq 0) {
         Add-MtTestResultDetail -Result (

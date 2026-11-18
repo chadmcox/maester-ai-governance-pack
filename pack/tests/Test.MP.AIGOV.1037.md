@@ -12,6 +12,11 @@ A cloud agent fails when both `EntraAgentId` and `EntraBlueprintId` are empty: D
 identity to govern with Conditional Access, sponsors or ID Protection. Agents on the `LocalAgents` platform (tools
 Defender for Endpoint found on devices) are reported for information only.
 
+Agents on platform `Other` with no owners and no source agent ID are vendor agents from the Microsoft 365 agent
+catalog (store apps). They run inside Copilot, are governed through the catalog (see `MP.AIGOV.1007`), and don't
+get an Entra agent identity, so they're counted for information only. Vendor agents that act on their own, such as
+Frontier agents, do have an Entra agent identity and are still checked.
+
 Every result ends with a count by `Platform`: agents, agents with no Entra identity, and whether the platform is
 counted. Some platforms run every agent as the signed-in user and never create an Entra agent identity. After you
 review the counts, list those platforms in the `AIGOV.ExcludedAgentPlatforms` setting; their agents are then
@@ -40,6 +45,15 @@ unregistered agents); NIST 800-53 CM-8; AI RMF GOVERN 1.6.
 > no platform is excluded. `Other` is a catch-all, so excluding it would also hide real unregistered agents.
 > The live schema uses `Name`, `EntraAgentID`, `EntraBlueprintID` and `Description`, not the documented names;
 > `column_ifexists` handles both.
+>
+> **Portal check** Nov 18, 2026: the 421 were vendor agents from the Microsoft 365 agent catalog (for example
+> Workday, Figma, Adobe and TeamViewer apps). Five opened in Defender's AI agents page had no owners, source agent
+> ID, Entra agent ID or blueprint. A hunting query showed all 421 had no owners and no source agent ID; the 7
+> `Other` agents with an Entra identity were autonomous agents such as Frontier agents and Azure SRE Agent. The
+> test now counts owner-less, source-less `Other` agents as vendor catalog agents, for information. Run live with
+> that rule (as a hunting query): 428 catalog agents, 3 local, 2 drafts, 1 counted Copilot Studio agent with an
+> Entra identity, so the test would pass. No tenant-built Agent Builder agents were present, so it's not proven
+> that those carry owners; if one has no owners, it would be treated as a catalog agent.
 
 #### Remediation action
 
