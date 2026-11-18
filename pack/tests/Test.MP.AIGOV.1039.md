@@ -20,8 +20,10 @@ language, validate tool selection); NIST 800-53 SI-10.
 > annotations. Corrected an unsupported pass over zero parsed tools to an explicit skip.
 > There were no available tool descriptions to review; steering-pattern accuracy remains unvalidated.
 
-If any reachable package omits `mcpToolDescription.tools`, this test skips rather than treating missing
-metadata as clean descriptions. It does not contact remote MCP servers.
+Packages that omit `mcpToolDescription.tools` are listed in the result; tools from the other packages are
+still checked, and any steering text or missing annotation fails the test. With no findings but some packages
+missing definitions, the test skips as a partial check instead of passing, because missing metadata isn't a
+clean description. It does not contact remote MCP servers.
 
 #### Remediation action
 

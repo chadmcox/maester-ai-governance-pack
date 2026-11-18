@@ -4,19 +4,23 @@ function Test-MPAIGOV1037 {
     Finds cloud agents that Microsoft Defender discovered but that have no Microsoft Entra identity.
     .DESCRIPTION
     Runs an advanced hunting query through Microsoft Graph (POST /security/runHuntingQuery, via
-    Maester's Invoke-MtGraphSecurityQuery) against the AgentsInfo table, taking the latest record per
-    agent and dropping deleted agents:
+    Maester's Invoke-MtGraphSecurityQuery) against the AgentsInfo table and takes the latest record per
+    agent. It keeps only agents that are live: LifecycleStatus not Deleted, Uninstalled or Blocked,
+    and PublishedStatus not Draft. Drafts are counted for information.
 
-        AgentsInfo
-        | summarize arg_max(Timestamp, *) by AgentId
-        | where LifecycleStatus != "Deleted"
-        | project AgentId, AgentName = Name, Platform, EntraAgentId = EntraAgentID, EntraBlueprintId = EntraBlueprintID
+    Column names differ between the AgentsInfo documentation (AgentName, EntraAgentId,
+    EntraBlueprintId) and some live tenants (Name, EntraAgentID, EntraBlueprintID). The query reads
+    whichever exists with column_ifexists.
 
-    A cloud agent fails when both EntraAgentId and EntraBlueprintId are empty: Defender sees it, but
-    it has no Entra agent identity, blueprint or enterprise application to govern with Conditional
-    Access, sponsors or ID Protection. Agents with Platform 'LocalAgents' (coding agents and other
-    tools found on endpoints by Defender for Endpoint) are counted separately and reported for
-    information only; they don't use Entra identities.
+    A live cloud agent fails when both its Entra agent ID and blueprint ID are empty: Defender sees it,
+    but it has no Entra agent identity, blueprint or enterprise application to govern with
+    Conditional Access, sponsors or ID Protection.
+
+    Some platforms list agents that run as the signed-in user and never get an Entra agent identity
+    by design. The result always includes a count by Platform. After reviewing it, list those
+    platforms in the AIGOV.ExcludedAgentPlatforms setting; their agents are then counted for
+    information only. Agents with Platform 'LocalAgents' (tools Defender for Endpoint found on
+    devices) are always reported for information only.
 
     AgentsInfo replaced AIAgentsInfo in June 2026; the old table was readable until July 1, 2026.
     The table needs Microsoft Defender XDR with Microsoft Agent 365. Without it the query fails and the
@@ -47,13 +51,26 @@ function Test-MPAIGOV1037 {
     )]
     [CmdletBinding()]
     [OutputType([bool])]
-    param()
+    param(
+        # Defender platforms whose agents run as the signed-in user and never get an Entra agent identity.
+        [MaesterParameter(Setting = 'AIGOV.ExcludedAgentPlatforms')]
+        [string[]]$ExcludedPlatforms = @(),
+
+        # The most agent rows to list in the result table.
+        [ValidateRange(1, 1000)]
+        [int]$MaxRows = 100
+    )
 
     $Query = @'
 AgentsInfo
 | summarize arg_max(Timestamp, *) by AgentId
-| where LifecycleStatus != "Deleted"
-| project AgentId, AgentName = Name, Platform, EntraAgentId = EntraAgentID, EntraBlueprintId = EntraBlueprintID
+| extend AgentName_ = tostring(column_ifexists("AgentName", column_ifexists("Name", ""))),
+    EntraAgentId_ = tostring(column_ifexists("EntraAgentId", column_ifexists("EntraAgentID", ""))),
+    EntraBlueprintId_ = tostring(column_ifexists("EntraBlueprintId", column_ifexists("EntraBlueprintID", ""))),
+    LifecycleStatus_ = tostring(column_ifexists("LifecycleStatus", "")),
+    PublishedStatus_ = tostring(column_ifexists("PublishedStatus", ""))
+| where LifecycleStatus_ !in~ ("Deleted", "Uninstalled", "Blocked")
+| project AgentId, AgentName = AgentName_, Platform, EntraAgentId = EntraAgentId_, EntraBlueprintId = EntraBlueprintId_, PublishedStatus = PublishedStatus_
 '@
 
     try {
@@ -76,33 +93,66 @@ AgentsInfo
     }
 
     $Agents = @($Agents | Where-Object { $null -ne $_ })
-    $Local = @($Agents | Where-Object { [string]$_.Platform -eq 'LocalAgents' })
-    $Cloud = @($Agents | Where-Object { [string]$_.Platform -ne 'LocalAgents' })
+    $Rows = @(
+        $Agents | Select-Object AgentId, AgentName, Platform, PublishedStatus,
+            @{ n = 'HasEntra'; e = { -not ([string]::IsNullOrWhiteSpace([string]$_.EntraAgentId) -and [string]::IsNullOrWhiteSpace([string]$_.EntraBlueprintId)) } },
+            @{ n = 'Scope'; e = {
+                    if ([string]$_.Platform -eq 'LocalAgents') { 'Local' }
+                    elseif ([string]$_.Platform -in $ExcludedPlatforms) { 'Excluded' }
+                    elseif ([string]$_.PublishedStatus -eq 'Draft') { 'Draft' }
+                    else { 'InScope' }
+                }
+            }
+    )
+    $InScope = @($Rows | Where-Object { $_.Scope -eq 'InScope' })
     $Unregistered = @(
-        $Cloud | Where-Object {
-            [string]::IsNullOrWhiteSpace([string]$_.EntraAgentId) -and [string]::IsNullOrWhiteSpace([string]$_.EntraBlueprintId)
-        } | Select-Object @{ n = 'Agent'; e = { [string]$_.AgentName } },
-            @{ n = 'Platform'; e = { [string]$_.Platform } },
-            @{ n = 'Defender agent ID'; e = { [string]$_.AgentId } }
+        $InScope | Where-Object { -not $_.HasEntra } |
+            Select-Object @{ n = 'Agent'; e = { [string]$_.AgentName } }, Platform, @{ n = 'Defender agent ID'; e = { [string]$_.AgentId } }
     )
 
-    $LocalNote = if ($Local.Count -gt 0) {
-        "`n`nFor information: Defender also found $($Local.Count) local agent(s) on endpoints (Platform 'LocalAgents'). " +
-        'Review them in the Defender portal under AI assets; they are not counted as findings.'
-    } else { '' }
+    # Count by platform so an admin can tell unregistered agents from platforms that never use Entra identities.
+    $ByPlatform = @(
+        $Rows | Group-Object -Property { if ([string]::IsNullOrWhiteSpace([string]$_.Platform)) { '(none)' } else { [string]$_.Platform } } |
+            Sort-Object -Property Count -Descending |
+            Select-Object @{ n = 'Platform'; e = { $_.Name } },
+                @{ n = 'Agents'; e = { $_.Count } },
+                @{ n = 'No Entra identity'; e = { @($_.Group | Where-Object { -not $_.HasEntra }).Count } },
+                @{ n = 'Counted'; e = {
+                        $Scopes = @($_.Group | Select-Object -ExpandProperty Scope -Unique)
+                        if ($Scopes -contains 'Local') { 'No (local agents)' }
+                        elseif ($Scopes -contains 'Excluded') { 'No (excluded platform)' }
+                        elseif ($Scopes -contains 'InScope') { 'Yes' }
+                        else { 'No (drafts only)' }
+                    }
+                }
+    )
+    $PlatformTable = $ByPlatform | ConvertTo-AIGovMarkdownTable -Property 'Platform', 'Agents', 'No Entra identity', 'Counted'
+
+    $Info = @(
+        $Count = @($Rows | Where-Object { $_.Scope -eq 'Local' }).Count
+        if ($Count -gt 0) { "$Count local agent(s) on endpoints (Platform 'LocalAgents') are listed for information; review them in the Defender portal under AI assets." }
+        $Count = @($Rows | Where-Object { $_.Scope -eq 'Draft' }).Count
+        if ($Count -gt 0) { "$Count draft agent(s) aren't counted until they're published." }
+        $Count = @($Rows | Where-Object { $_.Scope -eq 'Excluded' }).Count
+        if ($Count -gt 0) { "$Count agent(s) on excluded platforms ($($ExcludedPlatforms -join ', ')) aren't counted." }
+    ) -join ' '
+    $Footer = $(if ($Rows.Count -gt 0) { "`n`nAgents by platform:`n`n$PlatformTable" } else { '' }) + $(if ($Info) { "`n`n$Info" } else { '' })
 
     if ($Unregistered.Count -eq 0) {
         Add-MtTestResultDetail -Result (
-            "Well done. All $($Cloud.Count) cloud agent(s) in Defender's inventory have a Microsoft Entra agent identity or blueprint.$LocalNote"
+            "Well done. All $($InScope.Count) live cloud agent(s) in Defender's inventory have a Microsoft Entra agent identity or blueprint.$Footer"
         )
         return $true
     }
 
+    $Listed = @($Unregistered | Sort-Object Platform, Agent | Select-Object -First $MaxRows)
+    $More = if ($Unregistered.Count -gt $MaxRows) { "`n`n...and $($Unregistered.Count - $MaxRows) more." } else { '' }
     $Result = @(
-        "Found $($Unregistered.Count) of $($Cloud.Count) cloud agent(s) in Defender's inventory with no Microsoft Entra agent identity or blueprint. " +
-        'Register them with Microsoft Entra Agent ID, or remove them.'
-        $Unregistered | Sort-Object Platform, Agent | ConvertTo-AIGovMarkdownTable -Property 'Agent', 'Platform', 'Defender agent ID'
+        "Found $($Unregistered.Count) of $($InScope.Count) live cloud agent(s) in Defender's inventory with no Microsoft Entra agent identity or blueprint. " +
+        'Check the platform counts below first: if a platform runs every agent as the signed-in user, add it to AIGOV.ExcludedAgentPlatforms. ' +
+        'Register the rest with Microsoft Entra Agent ID, or remove them.'
+        ($Listed | ConvertTo-AIGovMarkdownTable -Property 'Agent', 'Platform', 'Defender agent ID') + $More
     ) -join "`n`n"
-    Add-MtTestResultDetail -Result ($Result + $LocalNote) -Severity 'Medium'
+    Add-MtTestResultDetail -Result ($Result + $Footer) -Severity 'Medium'
     return $false
 }

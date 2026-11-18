@@ -262,8 +262,8 @@ branch. The following observations limit the framework claims:
 |---|---|---|
 | 1034 | 104 active assignments were `Assigned` without an end date; all three roles exceeded three holders. No eligible schedule instances were returned. Expanded users omitted `userType` and nested selection failed; added explicit user reads. Independent reads found 58 distinct member users. | No guest or app assignment was present. |
 | 1035-1036 | Two of six blueprints had active secrets; the application federated-credentials path worked for the derived blueprint type. All 11 enabled identities had enabled user sponsors. | Certificate and inactive-sponsor cases were not present. |
-| 1037 | Corrected case-sensitive hunting columns to `Name`, `EntraAgentID`, `EntraBlueprintID`, with aliases preserving result fields. Independent and corrected test results agreed: 421 of 431 cloud rows had neither Entra identifier; three local rows were informational. Query errors no longer impersonate a missing-table/license skip. | A populated table does not exercise the unavailable-table case. |
-| 1038-1039 | Both reachable MCP packages supplied only a server URL, with no tool definitions. Corrected the unsupported zero-tool pass and unusable baseline to explicit missing-metadata skips, including partial metadata coverage. | Live fingerprint approval/change/stability and manual steering-hit review could not run; no remote MCP server was contacted. |
+| 1037 | Corrected case-sensitive hunting columns to `Name`, `EntraAgentID`, `EntraBlueprintID`, with aliases preserving result fields. Independent and corrected test results agreed: 421 of 431 cloud rows had neither Entra identifier; three local rows were informational. Query errors no longer impersonate a missing-table/license skip. | A populated table does not exercise the unavailable-table case. 428 flagged rows were platform `Other`; follow-up added lifecycle/draft filters, `column_ifexists` for both column spellings, a per-platform count and `AIGOV.ExcludedAgentPlatforms` (unit-tested, needs a live rerun). |
+| 1038-1039 | Both reachable MCP packages supplied only a server URL, with no tool definitions. Corrected the unsupported zero-tool pass and unusable baseline to explicit missing-metadata skips, including partial metadata coverage. | Live fingerprint approval/change/stability and manual steering-hit review could not run; no remote MCP server was contacted. Follow-up: packages that do list tools are now evaluated; packages without definitions are named and the result is a partial-check skip unless something fails. |
 | 1040 | Eight roots and seven inline sublabels; four of 15 enabled labels applied to sites/groups. `applicableTo` was a string; root `isDefault` values were false. | No duplicate-name case was present. |
 | 1041 | `$select=verifiedPublisher` succeeded on eight blueprint principals, but every publisher ID was empty. Added explicit skips for unsupported selection or all-empty IDs instead of inferring publisher verification. | No foreign principal or populated publisher ID was available; publisher classification remains unvalidated. |
 | 1042 | Raw singleton response contained `value=null`, `policyId=null`, matching the user's Apps admin center confirmation of Not configured. Disabled Maester paging to preserve the scalar setting and policy metadata rather than unwrapping `value`. | No configured setting value was available live. |
@@ -294,6 +294,10 @@ Seeded origin was not established; null history alone does not establish how an 
 The report now counts missing-history, new-account, unknown and fallback cases explicitly. When successful
 history is absent, the later interactive/non-interactive attempt is used; this fallback is unit-tested but
 was not present live. The 6,459 memberships reported beyond the member cap remain unchecked.
+Follow-up: the cap is now the `AIGOV.MaxSpendingPolicyMembers` setting (`0` = no cap), skipped members are
+counted once each rather than once per membership, and the result leads with the coverage percentage. A clean
+run past the cap skips as partial coverage instead of passing. Unit-tested; needs a live rerun with the cap
+raised or removed.
 
 ### Covered by Maester core (missing from the tables above)
 

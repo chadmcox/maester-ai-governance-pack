@@ -67,15 +67,8 @@ function Test-MPAIGOV1038 {
             (Test-AIGovPackageUserAccessible -Package $_)
         })
     $ToolRows = @($McpPackages | Get-AIGovMcpTool)
-    $FailedCount = @($ToolRows | Where-Object { $_.Failed } | Select-Object -ExpandProperty PackageId -Unique).Count
-
-    if ($ToolRows.FailureReason -contains 'ToolDefinitionsUnavailable') {
-        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
-            'MCP tool definitions are unavailable for one or more reachable packages in the catalog response. ' +
-            'A server URL alone cannot establish a complete tool baseline. This check does not connect to MCP servers.'
-        )
-        return $null
-    }
+    $NoDefinitions = @($ToolRows | Where-Object { $_.FailureReason -eq 'ToolDefinitionsUnavailable' } | Select-Object -ExpandProperty PackageId -Unique)
+    $FailedCount = @($ToolRows | Where-Object { $_.Failed -and $_.FailureReason -ne 'ToolDefinitionsUnavailable' } | Select-Object -ExpandProperty PackageId -Unique).Count
 
     if ($McpPackages.Count -gt 0 -and $FailedCount -eq $McpPackages.Count) {
         Add-MtTestResultDetail -SkippedBecause Error -Result "Couldn't read or parse any of the $($McpPackages.Count) package(s) with an MCP server."
@@ -87,11 +80,22 @@ function Test-MPAIGOV1038 {
             @{ n = 'Fingerprint'; e = { $_ | Get-AIGovMcpToolFingerprint } }
     )
 
+    # A package that lists only a server URL can't be fingerprinted. Check the rest, but never pass an incomplete check.
+    $NoDefinitionsReason = (
+        "$($NoDefinitions.Count) reachable package(s) list an MCP server but no tool definitions in the catalog, so their tools " +
+        "can't be compared with a baseline. This check doesn't connect to MCP servers."
+    )
+    if ($Current.Count -eq 0 -and $NoDefinitions.Count -gt 0) {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason $NoDefinitionsReason
+        return $null
+    }
+
     if (@($Baseline | Where-Object { $null -ne $_ }).Count -eq 0) {
         $Json = $Current | Select-Object PackageId, ToolName, Fingerprint | ConvertTo-Json -Depth 3
         Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
             'No MCP tool baseline is set. Review the tools, then add the approved entries to AIGOV.McpToolBaseline in maester-config.json.'
-        ) -Result ("$($Current.Count) MCP tool(s) in $($McpPackages.Count) reachable package(s). Current fingerprints:`n`n``````json`n$Json`n``````")
+        ) -Result ("$($Current.Count) MCP tool(s) in $($McpPackages.Count) reachable package(s). Current fingerprints:`n`n``````json`n$Json`n``````" +
+            $(if ($NoDefinitions.Count -gt 0) { "`n`n$NoDefinitionsReason" } else { '' }))
         return $null
     }
 
@@ -108,13 +112,22 @@ function Test-MPAIGOV1038 {
             if ($Status) { $Tool | Select-Object @{ n = 'Package'; e = { $_.PackageName } }, @{ n = 'Tool'; e = { $_.ToolName } }, @{ n = 'Status'; e = { $Status } } }
         }
     )
-    $Removed = @($Approved.Keys | Where-Object { -not $Seen.ContainsKey($_) })
+    # Baseline tools in packages without definitions aren't "removed"; they just can't be seen.
+    $Removed = @($Approved.Keys | Where-Object { -not $Seen.ContainsKey($_) -and ($_ -split '\|')[0] -notin $NoDefinitions })
 
     $Notes = @(
         if ($Removed.Count -gt 0) { "$($Removed.Count) baseline tool(s) are no longer present." }
+        if ($NoDefinitions.Count -gt 0) { $NoDefinitionsReason }
         if ($FailedCount -gt 0) { "$FailedCount package(s) couldn't be read or parsed and aren't reflected in this result." }
     ) -join ' '
     if ($Notes) { $Notes = "`n`n$Notes" }
+
+    if ($Drift.Count -eq 0 -and $NoDefinitions.Count -gt 0) {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+            "Partial check: all $($Current.Count) MCP tool(s) that could be read match the baseline, but $NoDefinitionsReason"
+        )
+        return $null
+    }
 
     if ($Drift.Count -eq 0) {
         Add-MtTestResultDetail -Result "Well done. All $($Current.Count) MCP tool(s) in reachable packages match the approved baseline.$Notes"

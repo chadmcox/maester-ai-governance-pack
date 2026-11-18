@@ -96,10 +96,30 @@ Describe 'Test-MPAIGOV1032' {
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match 'sign-in check was skipped' }
     }
 
-    It 'stops at MaxMembers and says how many were not checked' {
+    It 'skips as partial coverage when clean members stop at MaxMembers' {
         Set-AIGovGraphRoute (Get-Routes @((New-Member 'a'), (New-Member 'b'), (New-Member 'c')))
-        Test-MPAIGOV1032 -MaxMembers 2 | Should -BeTrue
-        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match "1 member\(s\) beyond MaxMembers \(2\) weren't checked" }
+        Test-MPAIGOV1032 -MaxMembers 2 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $SkippedBecause -eq 'Custom' -and
+            $SkippedCustomReason -match '^Partial coverage: checked 2 of 3 unique member\(s\) \(66%\)' -and
+            $SkippedCustomReason -match 'AIGOV\.MaxSpendingPolicyMembers \(2\)'
+        }
+    }
+
+    It 'leads a failure with the coverage when findings stop at MaxMembers' {
+        Set-AIGovGraphRoute (Get-Routes @((New-Member 'off' -Enabled $false), (New-Member 'b'), (New-Member 'c'), (New-Member 'd')))
+        Test-MPAIGOV1032 -MaxMembers 2 | Should -BeFalse
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Severity -eq 'Medium' -and
+            $Result -match '^Partial coverage: checked 2 of 4 unique member\(s\) \(50%\)' -and
+            $Result -match 'Found 1 of 2 checked'
+        }
+    }
+
+    It 'checks every member when MaxMembers is 0' {
+        Set-AIGovGraphRoute (Get-Routes @((New-Member 'a'), (New-Member 'b'), (New-Member 'c')))
+        Test-MPAIGOV1032 -MaxMembers 0 | Should -BeTrue
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Result -match 'among 3 evaluated' -and $Result -notmatch 'Partial coverage' }
     }
 
     It 'skips with Error when no group members can be read' {

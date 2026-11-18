@@ -72,14 +72,17 @@ function Test-MPAIGOV1039 {
             (Test-AIGovPackageUserAccessible -Package $_)
         })
     $ToolRows = @($McpPackages | Get-AIGovMcpTool)
-    $FailedCount = @($ToolRows | Where-Object { $_.Failed } | Select-Object -ExpandProperty PackageId -Unique).Count
+    $NoDefinitions = @($ToolRows | Where-Object { $_.FailureReason -eq 'ToolDefinitionsUnavailable' } | Select-Object -ExpandProperty PackageId -Unique)
+    $FailedCount = @($ToolRows | Where-Object { $_.Failed -and $_.FailureReason -ne 'ToolDefinitionsUnavailable' } | Select-Object -ExpandProperty PackageId -Unique).Count
     $Tools = @($ToolRows | Where-Object { -not $_.Failed })
 
-    if ($ToolRows.FailureReason -contains 'ToolDefinitionsUnavailable') {
-        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
-            'MCP tool definitions are unavailable for one or more reachable packages in the catalog response. ' +
-            'Descriptions and annotations cannot be reviewed from a server URL alone. This check does not connect to MCP servers.'
-        )
+    # A package that lists only a server URL can't be reviewed. Check the rest, but never pass an incomplete check.
+    $NoDefinitionsReason = (
+        "$($NoDefinitions.Count) reachable package(s) list an MCP server but no tool definitions in the catalog, so their " +
+        "descriptions and annotations can't be reviewed. This check doesn't connect to MCP servers."
+    )
+    if ($Tools.Count -eq 0 -and $NoDefinitions.Count -gt 0) {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason $NoDefinitionsReason
         return $null
     }
 
@@ -108,7 +111,18 @@ function Test-MPAIGOV1039 {
         }
     )
 
-    $Note = if ($FailedCount -gt 0) { "`n`n$FailedCount package(s) couldn't be read or parsed and aren't reflected in this result." } else { '' }
+    $Note = @(
+        if ($NoDefinitions.Count -gt 0) { $NoDefinitionsReason }
+        if ($FailedCount -gt 0) { "$FailedCount package(s) couldn't be read or parsed and aren't reflected in this result." }
+    ) -join ' '
+    if ($Note) { $Note = "`n`n$Note" }
+
+    if ($Findings.Count -eq 0 -and $NoDefinitions.Count -gt 0) {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+            "Partial check: all $($Tools.Count) MCP tool(s) that could be read have plain descriptions and annotations, but $NoDefinitionsReason"
+        )
+        return $null
+    }
 
     if ($Findings.Count -eq 0) {
         Add-MtTestResultDetail -Result "Well done. All $($Tools.Count) MCP tool(s) in reachable packages have plain descriptions and behavior annotations.$Note"

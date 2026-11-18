@@ -25,7 +25,8 @@ function Test-MPAIGOV1032 {
     Service plan IDs that make a SKU a Copilot license. The default is M365_COPILOT_BUSINESS_CHAT,
     which is in every Microsoft 365 Copilot SKU.
     .PARAMETER MaxMembers
-    The most unique members evaluated in one run. Members beyond this are counted, not checked.
+    The most unique members evaluated in one run (setting AIGOV.MaxSpendingPolicyMembers, default 5000).
+    Members beyond this are counted, not checked, and the result leads with the coverage. 0 means no cap.
     .EXAMPLE
     Test-MPAIGOV1032
     .EXAMPLE
@@ -59,7 +60,8 @@ function Test-MPAIGOV1032 {
         [Parameter(Mandatory = $false)]
         [string[]] $CopilotServicePlanIds = @('3f30311c-6b1e-48a4-ab79-725b469da960'),
 
-        [Parameter(Mandatory = $false)]
+        [MaesterParameter(Setting = 'AIGOV.MaxSpendingPolicyMembers')]
+        [ValidateRange(0, 1000000)]
         [int] $MaxMembers = 5000
     )
 
@@ -106,7 +108,8 @@ function Test-MPAIGOV1032 {
     # User ID -> member record (policies, and whether any of them needs a license).
     $Members = @{}
     $Unread = [System.Collections.Generic.List[string]]::new()
-    $Skipped = 0
+    # Unique members past MaxMembers. A HashSet so a user in several groups is counted once.
+    $SkippedIds = [System.Collections.Generic.HashSet[string]]::new()
     foreach ($Policy in $Policies) {
         $PolicyName = [string]$Policy.displayName
         $Base = "copilot/costManagement/spendingPolicies/$($Policy.id)"
@@ -145,7 +148,7 @@ function Test-MPAIGOV1032 {
                 $Id = [string]$User.id
                 if ([string]::IsNullOrWhiteSpace($Id)) { continue }
                 if (-not $Members.ContainsKey($Id)) {
-                    if ($Members.Count -ge $MaxMembers) { $Skipped++; continue }
+                    if ($MaxMembers -gt 0 -and $Members.Count -ge $MaxMembers) { [void]$SkippedIds.Add($Id); continue }
                     $Members[$Id] = [pscustomobject]@{
                         User         = $User
                         Policies     = [System.Collections.Generic.List[string]]::new()
@@ -257,7 +260,13 @@ function Test-MPAIGOV1032 {
         }
     }
 
-    if ($Skipped -gt 0) { $Notes.Add("$Skipped member(s) beyond MaxMembers ($MaxMembers) weren't checked.") }
+    $Coverage = ''
+    if ($SkippedIds.Count -gt 0) {
+        $Total = $Members.Count + $SkippedIds.Count
+        $Percent = [math]::Floor(100 * $Members.Count / $Total)
+        $Coverage = "Partial coverage: checked $($Members.Count) of $Total unique member(s) ($Percent%). " +
+            "$($SkippedIds.Count) member(s) beyond AIGOV.MaxSpendingPolicyMembers ($MaxMembers) weren't checked; raise the setting, or set it to 0 for no cap, to check them."
+    }
     if ($Unread.Count -gt 0) {
         $Notes.Add("$($Unread.Count) item(s) couldn't be read and aren't reflected in this result: $(($Unread | ForEach-Object { ConvertTo-AIGovMarkdownCell -Text $_ }) -join ', ').")
     }
@@ -266,6 +275,13 @@ function Test-MPAIGOV1032 {
         " Sign-in history: $OldWithoutHistory older account(s) with no sign-in recorded; $NewWithoutHistory new accounts, too early to judge; $UnknownHistory account(s) with unknown history or age; $FallbackCount using last-attempt fallback; $StaleSignIns stale activity record(s)."
     } else { '' }
 
+    if ($Findings.Count -eq 0 -and $Coverage) {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+            "$Coverage No problems were found among the members that were checked.$ActivitySummary$NoteText"
+        )
+        return $null
+    }
+
     if ($Findings.Count -eq 0) {
         Add-MtTestResultDetail -Result "Well done. No problems were found among $($Members.Count) evaluated spending-policy group member(s).$ActivitySummary$NoteText"
         return $true
@@ -273,7 +289,7 @@ function Test-MPAIGOV1032 {
 
     $MaxRows = 100
     $Ordered = @($Findings | Sort-Object User)
-    $Result = "Found $($Findings.Count) of $($Members.Count) spending-policy group member(s) who shouldn't be spending credits as they are.$ActivitySummary$NoteText"
+    $Result = $(if ($Coverage) { "$Coverage`n`n" } else { '' }) + "Found $($Findings.Count) of $($Members.Count) checked spending-policy group member(s) who shouldn't be spending credits as they are.$ActivitySummary$NoteText"
     $Result += "`n`n| User | Policies | Issues |"
     $Result += "`n| --- | --- | --- |"
     foreach ($Item in ($Ordered | Select-Object -First $MaxRows)) {

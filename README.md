@@ -42,7 +42,7 @@ the installed pack -- see the comment in
 | MP.AIGOV.1025 | Spending policy should be scoped to a group and fully configured | Preview | Validated, Graph only |
 | MP.AIGOV.1026 | Enabled spending policy should alert at least two active recipients | Preview | Validated, Graph only |
 | MP.AIGOV.1027 | Group behind a spending policy should be a populated security group without nesting | Preview | Validated, Graph only |
-| MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Validated (5,000-member cap), Graph only |
+| MP.AIGOV.1032 | Spending policy groups should contain only enabled, active, licensed members | Preview | Validated (5,000-member cap, now configurable), Graph only |
 | MP.AIGOV.1033 | Copilot connectors users can search should only take content from apps you govern | Preview | Validated, Graph only |
 | MP.AIGOV.1034 | AI administration roles should be eligible through PIM and held by a small number of internal users | Preview | Validated, Graph only |
 | MP.AIGOV.1035 | Agent identity blueprints should not authenticate with client secrets | Preview | Validated, Graph only |
@@ -79,11 +79,13 @@ Connect-Maester -Service Graph, ExchangeOnline, SecurityCompliance, Azure
 MP.AIGOV.1042 reads an API that supports delegated permissions only, so it skips in an app-only run.
 MP.AIGOV.1037 needs Microsoft Defender XDR with Microsoft Agent 365 for the `AgentsInfo` table.
 
-**Settings.** Four tests read `GlobalSettings` from `maester-config.json`:
+**Settings.** Six tests read `GlobalSettings` from `maester-config.json`:
 
 | Setting | Default | Used by |
 | --- | --- | --- |
+| `AIGOV.MaxSpendingPolicyMembers` | `5000` unique members (`0` = no cap); a clean run past the cap skips as partial coverage | MP.AIGOV.1032 |
 | `AIGOV.MaxAiAdminRoleHolders` | `3` | MP.AIGOV.1034 |
+| `AIGOV.ExcludedAgentPlatforms` | empty; review the platform counts in the result, then list platforms whose agents run as the signed-in user | MP.AIGOV.1037 |
 | `AIGOV.McpToolBaseline` | empty (test skips and prints current fingerprints) | MP.AIGOV.1038 |
 | `AIGOV.McpSteeringPatterns` | 8 built-in patterns | MP.AIGOV.1039 |
 | `AIGOV.MinimumAiAuditRetention` | `TwelveMonths` | MP.AIGOV.1044 |

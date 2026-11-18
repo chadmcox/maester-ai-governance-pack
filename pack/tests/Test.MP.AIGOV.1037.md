@@ -1,14 +1,21 @@
 Reconciles Microsoft Defender's agent inventory with Microsoft Entra. Runs an advanced hunting query through Graph
 (`POST /security/runHuntingQuery`, via Maester's `Invoke-MtGraphSecurityQuery`) against the `AgentsInfo` table,
-latest record per agent, deleted agents dropped.
+latest record per agent. Agents whose `LifecycleStatus` is `Deleted`, `Uninstalled` or `Blocked` are dropped, and
+`Draft` agents are counted for information until they're published.
 
-The query aliases the case-sensitive source columns `Name`, `EntraAgentID` and `EntraBlueprintID` to
-`AgentName`, `EntraAgentId` and `EntraBlueprintId`. A missing `AgentsInfo` table skips with the Agent 365
-prerequisite message; other query/schema errors are reported as errors, not mistaken for a missing license.
+Column names differ between the `AgentsInfo` documentation (`AgentName`, `EntraAgentId`, `EntraBlueprintId`) and
+some live tenants (`Name`, `EntraAgentID`, `EntraBlueprintID`). The query reads whichever exists with
+`column_ifexists`. A missing `AgentsInfo` table skips with the Agent 365 prerequisite message; other query or
+schema errors are reported as errors, not mistaken for a missing license.
 
 A cloud agent fails when both `EntraAgentId` and `EntraBlueprintId` are empty: Defender sees it, but it has no Entra
 identity to govern with Conditional Access, sponsors or ID Protection. Agents on the `LocalAgents` platform (tools
 Defender for Endpoint found on devices) are reported for information only.
+
+Every result ends with a count by `Platform`: agents, agents with no Entra identity, and whether the platform is
+counted. Some platforms run every agent as the signed-in user and never create an Entra agent identity. After you
+review the counts, list those platforms in the `AIGOV.ExcludedAgentPlatforms` setting; their agents are then
+reported for information only. The finding table lists at most 100 agents.
 
 `AgentsInfo` replaced `AIAgentsInfo` in June 2026. The table needs Microsoft Defender XDR with Microsoft Agent 365;
 without it the test skips. This is your coverage matrix row **G19**, now reachable through Graph.
@@ -22,6 +29,9 @@ unregistered agents); NIST 800-53 CM-8; AI RMF GOVERN 1.6.
 > including 3 `LocalAgents`, 3 `Copilot Studio` and 428 `Other` rows. Of 431 cloud rows, 421 had
 > neither Entra identifier. The corrected Maester run reports the same finding; local rows remain
 > informational. The original query's scalar-column error had incorrectly triggered the table-unavailable skip.
+> 428 of the flagged rows were on the `Other` platform. The platform breakdown, lifecycle and draft filters, and
+> `AIGOV.ExcludedAgentPlatforms` were added afterwards so you can tell unregistered agents from a platform that
+> never uses Entra identities. They're unit-tested; rerun against the live tenant to confirm the new counts.
 
 #### Remediation action
 

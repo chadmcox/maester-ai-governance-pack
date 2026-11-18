@@ -30,8 +30,11 @@ currency); CIS Controls v8.1 MCP Companion Guide; NIST 800-53 CM-2, CM-3.
 > definitions. The test now skips explicitly rather than printing an empty baseline as usable
 > evidence. Baseline approval, changed fingerprints and repeated-run stability remain unvalidated.
 
-If any reachable package omits `mcpToolDescription.tools`, the catalog does not provide enough data for a
-complete baseline and this test skips. It does not contact the remote MCP server to obtain missing definitions.
+Packages that omit `mcpToolDescription.tools` are listed in the result and left out of the comparison; their
+baseline entries aren't reported as removed. Tools from the other packages are still checked. Any drift fails
+the test. With no drift but some packages missing definitions, the test skips as a partial check instead of
+passing. If no package lists tools, it skips. It does not contact the remote MCP server to obtain missing
+definitions.
 
 #### Remediation action
 

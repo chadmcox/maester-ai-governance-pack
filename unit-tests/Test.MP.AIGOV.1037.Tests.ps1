@@ -34,13 +34,45 @@ Describe 'Test-MPAIGOV1037' {
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'Agent 365' }
     }
 
-    It 'projects the case-sensitive live AgentsInfo column names into the result fields' {
+    It 'reads both the documented and the live AgentsInfo column spellings' {
         Mock Invoke-MtGraphSecurityQuery { @() }
         Test-MPAIGOV1037 | Should -Be $true
         Should -Invoke Invoke-MtGraphSecurityQuery -Times 1 -ParameterFilter {
-            $Query -cmatch 'AgentName\s*=\s*Name' -and
-            $Query -cmatch 'EntraAgentId\s*=\s*EntraAgentID' -and
-            $Query -cmatch 'EntraBlueprintId\s*=\s*EntraBlueprintID'
+            $Query -cmatch 'column_ifexists\("AgentName",\s*column_ifexists\("Name"' -and
+            $Query -cmatch 'column_ifexists\("EntraAgentId",\s*column_ifexists\("EntraAgentID"' -and
+            $Query -cmatch 'column_ifexists\("EntraBlueprintId",\s*column_ifexists\("EntraBlueprintID"' -and
+            $Query -match '!in~\s*\("Deleted",\s*"Uninstalled",\s*"Blocked"\)'
+        }
+    }
+
+    It 'does not count agents on excluded platforms or drafts, and says so' {
+        Mock Invoke-MtGraphSecurityQuery {
+            @(
+                @{ AgentId = 'd4'; AgentName = 'Personal agent'; Platform = 'UserPlatform'; EntraAgentId = ''; EntraBlueprintId = ''; PublishedStatus = 'Published' },
+                @{ AgentId = 'd5'; AgentName = 'Work in progress'; Platform = 'CopilotStudio'; EntraAgentId = ''; EntraBlueprintId = ''; PublishedStatus = 'Draft' },
+                @{ AgentId = 'd6'; AgentName = 'Sales agent'; Platform = 'CopilotStudio'; EntraAgentId = 'sp6'; EntraBlueprintId = ''; PublishedStatus = 'Published' }
+            )
+        }
+        Test-MPAIGOV1037 -ExcludedPlatforms 'UserPlatform' | Should -Be $true
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Result -match 'All 1 live cloud agent' -and
+            $Result -match '1 draft agent' -and
+            $Result -match '1 agent\(s\) on excluded platforms \(UserPlatform\)' -and
+            $Result -match '\| UserPlatform \| 1 \| 1 \| No \(excluded platform\) \|' -and
+            $Result -match '\| CopilotStudio \| 2 \| 1 \| Yes \|'
+        }
+    }
+
+    It 'caps the listed rows at MaxRows and says how many more there are' {
+        Mock Invoke-MtGraphSecurityQuery {
+            1..5 | ForEach-Object { @{ AgentId = "d$_"; AgentName = "Agent $_"; Platform = 'AWSBedrock'; EntraAgentId = ''; EntraBlueprintId = '' } }
+        }
+        Test-MPAIGOV1037 -MaxRows 2 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Result -match 'Found 5 of 5' -and
+            $Result -match '\.\.\.and 3 more' -and
+            $Result -match 'Agent 2' -and $Result -notmatch 'Agent 3 \|' -and
+            $Result -match 'AIGOV\.ExcludedAgentPlatforms'
         }
     }
 
