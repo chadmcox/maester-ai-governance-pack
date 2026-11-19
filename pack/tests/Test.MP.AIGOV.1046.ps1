@@ -93,7 +93,8 @@ function Test-MPAIGOV1046 {
             $Policies = $PoliciesByAccount[[string]$Row.AccountId]
             $Policy = if ($Policies -and $PolicyName) { $Policies[$PolicyName] }
             $Filters = @($Policy.contentFilters | Where-Object { $null -ne $_ })
-            $Blocks = { param($Pattern) [bool]@($Filters | Where-Object { [string]$_.name -match $Pattern -and $_.enabled -eq $true -and ($_.blocking -eq $true -or [string]$_.action -eq 'BLOCKING') }) }
+            # Names of the filters that are on and blocking (blocking = true, or action BLOCKING in guardrails).
+            $BlockingNames = @($Filters | Where-Object { $_.enabled -eq $true -and ($_.blocking -eq $true -or [string]$_.action -eq 'BLOCKING') } | ForEach-Object { [string]$_.name })
 
             $Status = if (-not $PolicyName) { 'Fail' }
                 elseif ($null -eq $Policies) { 'Unread' }
@@ -102,8 +103,8 @@ function Test-MPAIGOV1046 {
 
             $Reasons = @(
                 if (-not $PolicyName) { 'no content filter' }
-                if ($Status -eq 'Check' -and -not (& $Blocks $UserPromptShield)) { 'Prompt Shields for user prompts off or annotate-only' }
-                if ($Status -eq 'Check' -and $RequireIndirectAttackFilter -and -not (& $Blocks $IndirectShield)) { 'Prompt Shields for indirect attacks off or annotate-only' }
+                if ($Status -eq 'Check' -and -not ($BlockingNames -match $UserPromptShield)) { 'Prompt Shields for user prompts off or annotate-only' }
+                if ($Status -eq 'Check' -and $RequireIndirectAttackFilter -and -not ($BlockingNames -match $IndirectShield)) { 'Prompt Shields for indirect attacks off or annotate-only' }
             )
             $Row | Select-Object Account, Subscription, 'Resource group', Deployment,
                 @{ n = 'Model'; e = { (@($_.Model, $_.Version) | Where-Object { $_ }) -join ' ' } },
