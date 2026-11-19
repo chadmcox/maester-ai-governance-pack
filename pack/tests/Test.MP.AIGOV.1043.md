@@ -29,6 +29,13 @@ Framework: CISA draft SCuBA agent baseline MS.SI.10.2, 10.3, 10.5, 10.6; NIST 80
 > requires the block value on the same action, without treating it as labeled-content grounding.
 > The user confirmed the simulation state and sensitive-prompt block in Purview. Enforced-rule
 > classification remains unvalidated because there was no enforced Copilot policy.
+>
+> **Seeded rerun** Nov 18, 2026: an enforced Copilot policy made in the Purview portal (a test object created for this run and removed afterwards) blocked
+> prompts with Credit Card Number. The test failed (Medium) as expected, but reported 4 of 4 protections off: it
+> missed the prompt block. Portal-made rules store `RestrictAccess` as `value=Block` with no `setting`, and put
+> the activity in `AdvancedRule` as `HasActivity = UploadText`. Fixed: a block with no setting counts as a prompt
+> block when the rule's activity is `UploadText`, and as a content-processing block otherwise. Unit-tested with
+> the live shape; rerun to confirm it now reports 3 of 4.
 
 #### Remediation action
 

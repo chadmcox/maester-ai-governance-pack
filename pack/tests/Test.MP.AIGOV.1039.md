@@ -19,6 +19,10 @@ language, validate tool selection); NIST 800-53 SI-10.
 > Live attempt Nov 18, 2026: two reachable packages supplied no tool definitions, descriptions or
 > annotations. Corrected an unsupported pass over zero parsed tools to an explicit skip.
 > There were no available tool descriptions to review; steering-pattern accuracy remains unvalidated.
+>
+> Seeded attempt Nov 18, 2026: a custom app declaring two MCP tools was uploaded in the Teams admin center, but it
+> did not appear in the Copilot package catalog within an hour, so it couldn't be evaluated. A source review found
+> that a tool with both steering text and no annotations was reported for steering text only; it now lists both.
 
 Packages that omit `mcpToolDescription.tools` are listed in the result; tools from the other packages are
 still checked, and any steering text or missing annotation fails the test. With no findings but some packages

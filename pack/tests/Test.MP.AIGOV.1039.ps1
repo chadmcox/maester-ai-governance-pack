@@ -109,7 +109,10 @@ function Test-MPAIGOV1039 {
                 }
             )
             $HasHint = @($HintNames | Where-Object { $null -ne $Tool.Annotations -and $null -ne $Tool.Annotations.$_ }).Count -gt 0
-            $Issue = if ($Matched.Count -gt 0) { 'Steering text' } elseif (-not $HasHint) { 'No annotations' }
+            $Issue = @(
+                if ($Matched.Count -gt 0) { 'Steering text' }
+                if (-not $HasHint) { 'No annotations' }
+            ) -join ', '
             if ($Issue) {
                 $Tool | Select-Object @{ n = 'Package'; e = { $_.PackageName } }, @{ n = 'Tool'; e = { $_.ToolName } },
                     @{ n = 'Issue'; e = { $Issue } },
@@ -136,7 +139,7 @@ function Test-MPAIGOV1039 {
         return $true
     }
 
-    $Steering = @($Findings | Where-Object { $_.Issue -eq 'Steering text' })
+    $Steering = @($Findings | Where-Object { $_.Issue -match 'Steering text' })
     $Severity = if ($Steering.Count -gt 0) { 'Medium' } else { 'Low' }
     $Result = @(
         "Found $($Steering.Count) MCP tool(s) with steering text and $($Findings.Count - $Steering.Count) with no behavior annotations."

@@ -16,6 +16,9 @@ Framework: CISA draft SCuBA agent baseline MS.SI.3.1 (every agent SHALL have a s
 > **Validated** Nov 18, 2026 against a live test tenant. Correctly **Passed** (true negative):
 > all 11 enabled agent identities had one sponsor. Independent reads of the derived-type sponsor
 > navigation returned `@odata.type` `#microsoft.graph.user` and `accountEnabled=true` for all 11.
+>
+> **Seeded rerun** Nov 18, 2026: an agent identity whose only sponsor was a disabled user (a test object created for this run and removed afterwards) was
+> reported with "every sponsor is disabled", as expected. Both branches are now proven live.
 
 #### Remediation action
 

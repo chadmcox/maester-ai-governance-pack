@@ -5,6 +5,10 @@
 > per-package detail call's `allowedUsersAndGroups`/`acquireUsersAndGroups` field names and
 > `resourceType` values matched the live schema. This test is slow (iterates every package's detail
 > individually) — expect several minutes against a catalog with hundreds of packages.
+>
+> Nov 18, 2026: a throttled run passed even though some package reads had failed. Fixed: unread packages are now
+> counted. If none can be read the test skips with an error; if the rest are clean it skips as a partial check;
+> beside a finding it notes how many weren't read.
 
 Checks whether an agent is assigned directly to individual users instead of through a group. The
 audience collections (`allowedUsersAndGroups`, `acquireUsersAndGroups`) are only returned by the

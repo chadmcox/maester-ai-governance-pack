@@ -25,6 +25,9 @@ Framework: CISA draft SCuBA agent baseline MS.SI.6.4 (AI admin roles by least pr
 > exceeded three holders. Independent eligibility reads returned zero entries. Expanded principals
 > omitted `userType`; explicit reads confirmed all 58 distinct users were members. Added explicit
 > user-property reads with regression coverage; no actual guest or app assignment was present.
+>
+> **Seeded rerun** Nov 18, 2026: an agent identity given AI Administrator as a permanent active assignment (a test object created for this run and removed afterwards)
+> was reported as a non-human holder, as expected. The guest branch is still unproven: the test tenant blocks guest invites.
 
 #### Remediation action
 
