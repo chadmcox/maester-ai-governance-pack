@@ -1,28 +1,4 @@
-> [!NOTE]
-> **Live rerun** Nov 18, 2026 **Passed** for 21 enabled, group-scoped, configured policies. This
-> differs from the earlier three-policy findings below; the current result is consistent with the
-> returned configuration, not proof of when or how those policies were changed.
-
-> [!NOTE]
-> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
-> The run correctly **Failed** (true positive): 10 problems across 3 group-scoped "Test Cowork ..."
-> policies (disabled status, no group linked, billing method not set, a per-user limit below the default
-> 2,000-credit threshold). No `allUsersSpendingPolicy` exists in this tenant yet, so the "scope All users"
-> High-severity path wasn't exercised against real data this run.
-
-Checks that every Copilot spending policy is scoped to an existing security group and fully configured.
-
-| Severity | Condition |
-| --- | --- |
-| High | The policy covers all users instead of a security group. |
-| High | The policy's status isn't `enabled`. |
-| High | A group-scoped policy has no group linked. |
-| High | A group linked to the policy no longer exists. |
-| Medium | The billing method isn't set. |
-| Medium | The per-user limit is a cap below `MinPerUserCredits` (default 2,000). |
-
-A policy with no overall ceiling is `MP.AIGOV.1013`; group owners and descriptions are `MP.AIGOV.1014`;
-overlapping policies are `MP.AIGOV.1015`.
+A spending policy that isn't enabled, isn't scoped to a group, or points at a deleted group doesn't control what you think it does. Copilot credit spend can then go to the wrong people or have no limit at all.
 
 #### Remediation action
 
@@ -35,6 +11,7 @@ enabled after fixing its group.
 
 - [Add an identity-based spending policy](https://learn.microsoft.com/copilot/implement/usage-based-billing-manage-copilot-credits#add-identity-based-spending-policy)
 - [List spendingPolicies](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/admin-settings/cost-management/spendingpolicy-list)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1025)
 
 <!--- Results --->
 %TestResult%

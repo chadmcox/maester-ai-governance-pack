@@ -56,8 +56,8 @@ available to confirm the live schema and skip behavior:
 > F7-licensed test tenant (no separate Agent 365 license needed; the Package API
 > was reachable with `CopilotPackages.Read.All` alone). `.1007`'s classification
 > logic was also corrected after live validation surfaced that `type` returns
-> `firstParty`/`thirdParty`, not the literal `microsoft`. See each test's `.md`
-> file for its validation banner.
+> `firstParty`/`thirdParty`, not the literal `microsoft`. See each test's
+> entry in docs/how-checks-work.md for its validation notes.
 
 Skills and MCP stay fully out of scope until a licensed tenant confirms the
 `elementType`/package-API schema (see coverage-matrix.md's "Skills and MCP —

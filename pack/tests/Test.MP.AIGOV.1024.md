@@ -1,20 +1,4 @@
-> [!NOTE]
-> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
-> The run correctly **Passed**: there are no classic Copilot Studio service principals in this tenant, so
-> this is a vacuous true negative. The owner check and the `reports/servicePrincipalSignInActivities`
-> sign-in check weren't exercised against real data; confirm the sign-in shape once a classic
-> Copilot Studio service principal exists in a test tenant.
-
-Older Copilot Studio agents run as ordinary service principals, without the sponsor and lifecycle controls
-of Agent ID. `MP.AIGOV.1005` lists them; this test checks the ones that need attention first.
-
-| Severity | Condition |
-| --- | --- |
-| Medium | No owner. |
-| Low | Enabled, created more than `StaleDays` ago (default 180), and no sign-in in `StaleDays` or none recorded. |
-
-The sign-in check needs AuditLog.Read.All. If sign-in activity can't be read, it's skipped and the result
-says so.
+Older Copilot Studio agents with no owner or no recent sign-in are the easiest to forget. They keep their access with nobody responsible for them, which is the kind of identity attackers look for.
 
 #### Remediation action
 
@@ -25,6 +9,7 @@ an automated migration path.
 #### Related links
 
 - [Agent identities, service principals and applications](https://learn.microsoft.com/entra/agent-id/agent-service-principals)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1024)
 
 <!--- Results --->
 %TestResult%

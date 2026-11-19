@@ -253,9 +253,11 @@ mapped.
 
 Candidates came from MCSB v2 Artificial Intelligence Security (AI-1 to AI-7), the OWASP Top 10 for Agentic
 Applications (ASI01–ASI10, Dec 9, 2025) and Five Eyes *Careful Adoption of Agentic AI Services*. Built first are
-the three that use documented Azure Resource Manager properties and the same Azure connection as 1045, then two
-SharePoint tenant settings read through Maester's SharePoint (PnP) connection. Maester core has no check for these.
-All five are unit-tested only. Per-site Restricted Content Discovery and tenant-wide Power Platform data policies
+the three that use documented Azure Resource Manager properties and the same Azure connection as 1045, then three
+SharePoint tenant settings read through Maester's SharePoint (PnP) connection, three checks on Defender's
+`AgentsInfo` table and one on Entra's agent risk logs. Maester core has no check for these.
+1046–1050 were run live on Nov 19, 2026 (see each test's page); 1051–1055 are built from live data samples but
+haven't run inside Maester yet. Per-site Restricted Content Discovery and tenant-wide Power Platform data policies
 stay out: the first needs a per-site scan or the SharePoint Online report cmdlets, the second the Power Platform
 admin API, which Maester doesn't connect to.
 
@@ -266,11 +268,15 @@ admin API, which Maester doesn't connect to.
 | R2-3 | Model deployment uses a model not in `AIGOV.ApprovedModels` | `MP.AIGOV.1048` | ARM `accounts/deployments` (`properties.model`) | MCSB v2 AI-1; OWASP ASI04; CM-7 |
 | R2-4 | Agents can share SharePoint content with external users | `MP.AIGOV.1049` | SharePoint `Get-MtSpo` (`Get-PnPTenant`): `RestrictExternalSharingForAgents` (preview; confirmed returned Nov 19), `SharingCapability` | OWASP ASI02, ASI03; MCSB v2 AI-4; AC-21 |
 | R2-5 | Site admins can turn off Restricted Content Discovery or Restricted Access Control | `MP.AIGOV.1050` | SharePoint `Get-MtSpo`: `DelegateRestrictedContentDiscoveryConfiguration`, `DelegateRestrictedAccessControlConfiguration` (PnP names; SPO names also read; confirmed returned Nov 19) | Zero Trust for Copilot (oversharing); OWASP LLM02; AC-6 |
+| R2-6 | Users can share sites and content with agents without a disclaimer | `MP.AIGOV.1051` | SharePoint `Get-MtSpo`: `EnableAgentWorkerSharingDisclaimer` (preview; confirmed returned Nov 19) | OWASP ASI09; Zero Trust for Copilot; AT-2 |
+| R2-7 | Agent has an active Defender exposure indicator at or above a set severity | `MP.AIGOV.1052` | `AgentsInfo.RiskIndicators` (property bag; shape confirmed Nov 19) | OWASP ASI10; MCSB v2 AI-6; RA-5 |
+| R2-8 | MCP server on a Copilot Studio or local agent uses HTTP, an unlisted host, or runs without approval on a published agent | `MP.AIGOV.1053` | `AgentsInfo.McpServers` (JSON strings; shape confirmed Nov 19) | OWASP ASI02, ASI04; MCSB v2 AI-4, AI-5; SC-8 |
+| R2-9 | Entra diagnostic settings don't export `RiskyAgents` / `AgentRiskEvents` | `MP.AIGOV.1054` | ARM `microsoft.aadiam/diagnosticSettings` (categories confirmed Nov 19) | MCSB v2 AI-6; Five Eyes agentic (logging); AU-6 |
+| R2-10 | Local AI agent auto-approves its actions or runs in an untrusted process | `MP.AIGOV.1055` | `AgentsInfo.RawAgentInfo.localAgentMetadata` (`autoApprove`, `trustedProcess`; Microsoft's documented query) | OWASP ASI02, ASI09; MCSB v2 AI-5; CM-7 |
 
-Still candidates (need a live `AgentsInfo` sample before building): Defender risk indicators on agents (ASI10),
-Defender-found MCP servers against the 1008/1010/1016 rules (ASI02, ASI04), agent-to-agent calls to
-unregistered agents (ASI07, ASI08). Also a candidate (SharePoint, same connection as 1049): a disclaimer before
-users share with an agent, `EnableAgentWorkerSharingDisclaimer` (preview; PnP returned it on Nov 19).
+Still candidates: agent-to-agent calls to unregistered agents (ASI07, ASI08), autonomous triggers with write tools,
+guardrails and memory. A live `AgentsInfo` sample on Nov 19, 2026 had `ConnectedAgents`, `Triggers`, `Guardrails`,
+`Memory` and `Endpoints` empty for every agent, so there's nothing to check against yet.
 
 ### Live review (Nov 18, 2026)
 
@@ -294,9 +300,9 @@ branch. The following observations limit the framework claims:
 | 1044 | Independent native command returned zero retention policies, confirming the missing-policy finding. | `RecordTypes`, `Enabled` availability and duration values cannot be checked without an object. |
 | 1045 | Resource Graph returned no accounts, and independent subscription enumeration found zero accessible subscriptions. | The empty-inventory pass proves neither account configuration nor pricing; no subscription was available for a pricing GET. |
 
-Earlier-test outcome changes were compared with their dated banners. For 1009, one secret moved from outside
+Earlier-test outcome changes were compared with their dated validation notes (now in docs/how-checks-work.md). For 1009, one secret moved from outside
 the 30-day window to approximately 30 days remaining, consistent with elapsed time. The 1020 reachability
-revision already documented in its banner explains exclusion of the former unreachable finding. Current
+revision already documented in its validation notes explains exclusion of the former unreachable finding. Current
 1011 candidates are not tenant-wide; 1021 now finds assigned groups; 1025 reports 21 configured policies;
 1027 reports only informational dynamic groups. Those are current-input observations, not proof of who
 changed the tenant or when; historical raw snapshots are unavailable. No old-test code was changed to force

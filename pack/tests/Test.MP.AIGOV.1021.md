@@ -1,24 +1,4 @@
-> [!NOTE]
-> **Live rerun** Nov 18, 2026 **Failed**, reporting seven assigned-group problems. Unlike the prior
-> vacuous pass, current input includes assigned groups. This PR did not change this test's code;
-> without historical raw snapshots, the tenant-change history cannot be independently established.
-
-> [!NOTE]
-> **Validated** 2026-11-09 against a real Microsoft 365 test tenant, via an actual `Invoke-Maester` run.
-> The run correctly **Passed**: no agent or tool in this tenant is assigned to a group, so this is a
-> vacuous true negative — the deleted-group, owner-count and description checks themselves weren't
-> exercised against a real group assignment.
-
-Checks the groups that agents and tools are assigned to (who can use or install them). Each group decides
-who gets the agent, so someone has to own its membership.
-
-| Severity | Condition |
-| --- | --- |
-| Medium | An assigned group no longer exists. |
-| Medium | An assigned group has fewer than `MinOwnerCount` owners (default 2). |
-| Low | An assigned group has no description. |
-
-Agents assigned directly to users are `MP.AIGOV.1003`.
+The group an agent is assigned to decides who can use it. A deleted group, or one with no owners or description, means nobody is reviewing who has the agent, and people can gain access through a group nobody looks after.
 
 #### Remediation action
 
@@ -28,6 +8,7 @@ each group and the agent or tool it's for.
 #### Related links
 
 - [Get a Copilot package](https://learn.microsoft.com/microsoft-365/copilot/extensibility/api/admin-settings/package/copilotpackages-get)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1021)
 
 <!--- Results --->
 %TestResult%

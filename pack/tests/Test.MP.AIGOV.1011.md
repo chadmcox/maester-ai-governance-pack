@@ -1,28 +1,4 @@
-Checks whether any MCP tool with a `destructiveHint` or `openWorldHint` annotation is reachable
-through a package that's available or deployed tenant-wide (`availableTo` indicating
-`allowedForAll`, or `deployedTo` indicating `acquiredForAll` — the same tenant-wide signal
-`MP.AIGOV.1007` uses). The tool annotations come from the per-package detail call (`GET
-/copilot/admin/catalog/packages/{id}`), specifically the `elementDetails` entry with `elementType`
-`AgentConnectors`, whose `elements[].definition` (a JSON string) contains
-`toolSource.remoteMcpServer.mcpToolDescription.tools[].annotations`.
-
-A `destructiveHint: true` tool can make an irreversible change; an `openWorldHint: true` tool can
-interact with an open-ended, not-fully-enumerable set of external entities. Either one, combined
-with the tool being reachable by everyone in the tenant by default, is materially riskier than the
-same tool scoped to a reviewed pilot group. Detail-call and definition-parse failures are counted
-the same way as `MP.AIGOV.1008`/`MP.AIGOV.1010`: a partial failure is noted in the result, and a
-total failure skips with `Error` instead of reporting a false pass.
-
-> [!NOTE]
-> **Live rerun** Nov 18, 2026 **Passed** with zero tenant-wide MCP candidates. Both reachable MCP
-> packages were group-scoped. This vacuous negative does not re-exercise the previously documented
-> tenant-wide annotation finding; current catalog scope differs from the earlier banner.
-
-> [!NOTE]
-> **Validated** 2026-11-06 against a real Microsoft 365 test tenant (F7-licensed). The run
-> correctly **Failed** (true positive): found MCP tools with `openWorldHint: true` inside a
-> tenant-wide package ("Moody's Credit MCP", `type: thirdParty`, `availableTo: allowedForAll`),
-> confirming both the tenant-wide filter and the tool-annotation schema work against real data.
+Tools marked destructive can delete or change data, and open-world tools reach outside your organization. In a package everyone can use, one bad prompt, or a prompt injected from a document, can trigger them for any user. These tools belong in packages limited to the people who need them.
 
 #### Remediation action
 
@@ -33,6 +9,7 @@ expected before leaving it available by default.
 #### Related links
 
 - [Get Copilot package](https://learn.microsoft.com/graph/api/copilotadmin-get-package?view=graph-rest-1.0)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1011)
 
 <!--- Results --->
 %TestResult%

@@ -1,18 +1,4 @@
-> [!NOTE]
-> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
-> catalog API was reachable with `CopilotPackages.Read.All` alone — no separate Agent 365 license
-> was required to reach it in this tenant). The run correctly **Skipped** with
-> "the package catalog reports no agents, so adoption has nothing to measure" because this tenant's
-> catalog had zero agents. The adoption-threshold comparison itself was not exercised; re-validate
-> that branch once a tenant with at least one agent and usage data is available.
-
-Checks whether Microsoft 365 Copilot agent catalog adoption is at or above a configurable threshold
-(default 5%) over the fixed D90 report period. Only runs when the package catalog reports at least
-one agent. Skips when fewer than 20 users are reported, or when no usage-report column matches the
-undocumented `*Agent*Activity*` name pattern.
-
-Low adoption after agents have been published for a while can mean the agents solve the wrong
-problem, are hard to find, or were never announced to the people they were built for.
+Agents only pay off when people use them. If very few licensed users have tried any agent after they've been available for a while, the agents may not meet a need, may be hard to find, or may need training and promotion. Low adoption is also a cost signal: you're paying for capacity, building agents and governing them for little return.
 
 #### Remediation action
 
@@ -25,6 +11,7 @@ grace period.
 
 - [Get Microsoft 365 Copilot usage report](https://learn.microsoft.com/graph/api/reportroot-getmicrosoft365copilotusageuserdetail?view=graph-rest-beta)
 - [List Copilot packages](https://learn.microsoft.com/graph/api/copilotadmin-list-packages?view=graph-rest-1.0)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1001)
 
 <!--- Results --->
 %TestResult%

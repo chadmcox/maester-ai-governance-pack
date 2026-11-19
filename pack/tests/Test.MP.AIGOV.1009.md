@@ -1,28 +1,4 @@
-> [!NOTE]
-> **Revalidated** Nov 18, 2026: correctly **Failed** (true positive), with one credential inside the
-> 30-day window. Independent reads found two active secrets and no certificates. One secret now
-> has about 30 days remaining versus 42 days at the earlier validation date, consistent with elapsed
-> time rather than changed test logic.
-
-> [!NOTE]
-> **Validated** 2026-11-06 against a real Microsoft 365 test tenant (F7-licensed), and re-validated
-> after adding certificate (`keyCredentials`) support. The run correctly **Passed** (true
-> negative): 6 Agent Identity Blueprints were found, 2 of which have an active client secret, and
-> neither secret falls within the 30-day warning window. This confirms the
-> `applications/microsoft.graph.agentIdentityBlueprint` read and the already-expired exclusion both
-> work; a zero-finding result here is the expected negative case, not evidence the check doesn't
-> run. No blueprint in this tenant had a `keyCredentials` entry, so the certificate code path ran
-> without error but has not been exercised against an actual certificate credential.
-
-Checks whether any Agent Identity Blueprint client secret or certificate credential is still active
-but will expire within a configurable warning window (default 30 days). Both `passwordCredentials`
-(secrets) and `keyCredentials` (certificates) are checked; the result table includes a `Type`
-column distinguishing the two. Maester's own `MT.1208` flags credentials that are
-already expired, valid for more than 730 days, exceed a maximum active-secret count, or are
-retained alongside a federated identity credential — confirmed by reading its full source — but has
-no forward-looking warning before a still-active credential actually expires. This test fills that
-gap. An already-expired credential is `MT.1208`'s finding, not this one's; this test explicitly
-excludes any `endDateTime` in the past.
+When a blueprint's secret or certificate expires, every agent built from it stops signing in, and the outage often hits users before anyone notices. Rotating credentials before they expire keeps agents running and avoids rushed fixes.
 
 #### Remediation action
 
@@ -32,6 +8,7 @@ expires, to avoid an unplanned outage when the agent identity loses the ability 
 #### Related links
 
 - [List agentIdentityBlueprints](https://learn.microsoft.com/graph/api/agentidentityblueprint-list?view=graph-rest-1.0)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1009)
 
 <!--- Results --->
 %TestResult%
