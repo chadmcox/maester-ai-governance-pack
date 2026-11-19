@@ -18,6 +18,11 @@ Framework: NIST 800-53 IA-2, SC-7, SI-4.
 > enumeration returned zero accessible subscriptions. The empty-inventory pass is not proof of
 > account hardening or Defender coverage. No subscription was available for a pricing GET;
 > `disableLocalAuth`, `publicNetworkAccess`, and `pricingTier` remain unvalidated.
+>
+> **Seeded rerun** Nov 18, 2026: an Azure OpenAI account created in the portal with default settings (a test object created for this run and removed afterwards)
+> correctly **Failed**: public network access with default action `Allow`, and Defender for AI Services on the
+> `Free` tier. Key auth was not reported, correctly: the portal created the account with `disableLocalAuth=true`.
+> Resource Graph and a direct ARM read agreed. The key-auth branch is still unproven live.
 
 #### Remediation action
 

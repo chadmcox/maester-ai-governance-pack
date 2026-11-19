@@ -48,6 +48,7 @@ function Test-MPAIGOV1003 {
     }
 
     $DirectAssignments = [System.Collections.Generic.List[pscustomobject]]::new()
+    $FailedReads = 0
     foreach ($Package in $Packages) {
         $PackageId = [string]$Package.id
         if ([string]::IsNullOrWhiteSpace($PackageId)) { continue }
@@ -59,6 +60,7 @@ function Test-MPAIGOV1003 {
             # One package's detail call failing (for example, it was removed between the list and the
             # detail call) should not fail every other package already evaluated.
             Write-Verbose "Skipping package $PackageId after a detail-read error: $($_.Exception.Message)"
+            $FailedReads++
             continue
         }
 
@@ -73,6 +75,22 @@ function Test-MPAIGOV1003 {
                 UserCount    = $DirectUsers.Count
             })
         }
+    }
+
+    $ReadNote = if ($FailedReads -gt 0) {
+        "$FailedReads of $($Packages.Count) package(s) couldn't be read (for example, throttled or removed during the run) and aren't reflected in this result."
+    } else { '' }
+
+    if ($Packages.Count -gt 0 -and $FailedReads -eq $Packages.Count) {
+        Add-MtTestResultDetail -SkippedBecause Error -Result "Couldn't read the details of any of the $($Packages.Count) package(s)."
+        return $null
+    }
+
+    if ($DirectAssignments.Count -eq 0 -and $FailedReads -gt 0) {
+        Add-MtTestResultDetail -SkippedBecause Custom -SkippedCustomReason (
+            "Partial check: no direct user assignments among the packages that could be read, but $ReadNote Re-run the test."
+        )
+        return $null
     }
 
     if ($DirectAssignments.Count -eq 0) {
@@ -93,6 +111,7 @@ function Test-MPAIGOV1003 {
         $Result += "`n| $($Item.PackageId) | $DisplayName | $($Item.UserCount) |"
     }
 
+    if ($ReadNote) { $Result += "`n`n$ReadNote" }
     Add-MtTestResultDetail -Result $Result -Severity 'Low'
     return $false
 }

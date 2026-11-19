@@ -62,6 +62,33 @@ Describe 'Test-MPAIGOV1043' {
         }
     }
 
+    It 'recognizes the portal shape: Block with no setting and HasActivity UploadText in AdvancedRule' {
+        $Portal = @{
+            Name = 'Portal prompt rule'; ParentPolicyName = 'Copilot DLP'; Disabled = $false
+            RestrictAccess = @(@{ value = 'Block' })
+            AdvancedRule = '{"Version":"1.0","Condition":{"Operator":"And","SubConditions":[{"ConditionName":"HasActivity","Value":"UploadText"},{"ConditionName":"ContentContainsSensitiveInformation","Value":[{"groups":[{"name":"Default","sensitivetypes":[{"name":"Credit Card Number"}]}]}]}]}}'
+        }
+        Mock Get-MtExo { if ($Request -eq 'DlpCompliancePolicy') { @($CopilotPolicy) } else { @($Portal) } }
+        Test-MPAIGOV1043 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Severity -eq 'Medium' -and
+            $Result -match 'leave 3 of 4' -and
+            $Result -match 'Block prompts with sensitive info types \| On' -and
+            $Result -match 'Block labeled files and email \| Missing'
+        }
+    }
+
+    It 'treats a Block with no setting and no prompt activity as a content-processing block' {
+        $PortalLabels = $LabelRule.Clone()
+        $PortalLabels.RestrictAccess = @(@{ value = 'Block' })
+        Mock Get-MtExo { if ($Request -eq 'DlpCompliancePolicy') { @($CopilotPolicy) } else { @($PortalLabels) } }
+        Test-MPAIGOV1043 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter {
+            $Result -match 'Block labeled files and email \| On' -and
+            $Result -match 'Block prompts with sensitive info types \| Missing'
+        }
+    }
+
     It 'does not combine an allowed processing action with a different blocked action' {
         $Mixed = $LabelRule.Clone()
         $Mixed.RestrictAccess = @(

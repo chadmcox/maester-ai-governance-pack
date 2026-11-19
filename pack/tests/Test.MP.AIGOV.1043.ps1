@@ -79,13 +79,19 @@ function Test-MPAIGOV1043 {
     $PolicyNames = @($Enforced | ForEach-Object { [string]$_.Name })
     $ActiveRules = @($Rules | Where-Object { [string]$_.ParentPolicyName -in $PolicyNames -and $_.Disabled -ne $true })
 
+    # Rules made in PowerShell name the Copilot activity in RestrictAccess (setting = UploadText or
+    # ExcludeContentProcessing). Rules made in the Purview portal can leave setting empty and put the
+    # activity in AdvancedRule as HasActivity = UploadText (seen live, Nov 18 2026).
     $Classified = @(
         $ActiveRules | Select-Object @{ n = 'Rule'; e = { [string]$_.Name } }, @{ n = 'Policy'; e = { [string]$_.ParentPolicyName } },
             @{ n = 'Conditions'; e = { (@($_.ContentContainsSensitiveInformation) | ConvertTo-Json -Depth 20 -Compress) + " $($_.AdvancedRule)" } },
-            @{ n = 'Blocks'; e = { @($_.RestrictAccess | Where-Object { $_.setting -eq 'ExcludeContentProcessing' -and $_.value -eq 'Block' }).Count -gt 0 } },
-            @{ n = 'BlocksPrompts'; e = { @($_.RestrictAccess | Where-Object { $_.setting -in 'UploadText', 'ExcludeContentProcessing' -and $_.value -eq 'Block' }).Count -gt 0 } },
+            @{ n = 'PromptActivity'; e = { "$($_.HasActivity) $($_.AdvancedRule)" -match '(?i)UploadText' } },
+            @{ n = 'Block'; e = { @($_.RestrictAccess | Where-Object { [string]$_.value -eq 'Block' } | ForEach-Object { [string]$_.setting }) } },
             @{ n = 'WebSearch'; e = { $_.RestrictWebGrounding -eq $true } },
             @{ n = 'External'; e = { [string]$_.FromScope -match '(?i)NotInOrganization' } } |
+            Select-Object Rule, Policy, Conditions, WebSearch, External,
+                @{ n = 'Blocks'; e = { $_.Block -contains 'ExcludeContentProcessing' -or (@($_.Block | Where-Object { -not $_ }).Count -gt 0 -and -not $_.PromptActivity) } },
+                @{ n = 'BlocksPrompts'; e = { @($_.Block | Where-Object { $_ -in 'UploadText', 'ExcludeContentProcessing' }).Count -gt 0 -or (@($_.Block | Where-Object { -not $_ }).Count -gt 0 -and $_.PromptActivity) } } |
             Select-Object Rule, Policy, WebSearch, External, Blocks, BlocksPrompts,
                 @{ n = 'HasLabels'; e = { $_.Conditions -match '(?i)"type"\s*:\s*"Sensitivity"|"labels"\s*:\s*\[\s*\{' } },
                 @{ n = 'HasSits'; e = { $_.Conditions -match '(?i)"sensitivetypes"\s*:\s*\[\s*\{' -or ($_.Conditions -match '(?i)"name"\s*:' -and $_.Conditions -notmatch '(?i)"labels"\s*:\s*\[\s*\{') } }
