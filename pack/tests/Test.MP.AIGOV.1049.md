@@ -16,7 +16,8 @@ for agent functions); NIST 800-53 AC-21.
 > [!NOTE]
 > **Setting confirmed Nov 19, 2026:** `Get-PnPTenant` returned `RestrictExternalSharingForAgents = False` with
 > `SharingCapability = ExternalUserAndGuestSharing` on a test tenant, so this check should fail there. The full
-> Maester run of this check is still pending. The setting is in preview.
+> **Live run** Nov 19, 2026 (Maester 3.0.0-rc83, PnP.PowerShell 3.5.0): **Failed** (Medium) as expected on the same
+> tenant. Validated live. The setting is in preview.
 
 #### Remediation action
 

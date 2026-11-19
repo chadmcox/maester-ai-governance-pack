@@ -59,8 +59,8 @@ the installed pack -- see the comment in
 | MP.AIGOV.1046 | Azure AI model deployments should use a content filter that blocks prompt attacks | Preview | Not yet validated, Azure |
 | MP.AIGOV.1047 | Azure OpenAI and AI Services accounts should export their audit and request logs | Preview | Not yet validated, Azure |
 | MP.AIGOV.1048 | Azure AI model deployments should only use approved models | Preview | Not yet validated, Azure |
-| MP.AIGOV.1049 | Agents should not be able to share SharePoint content with external users | Preview | Not yet validated, SharePoint Online |
-| MP.AIGOV.1050 | Only SharePoint admins should manage Restricted Content Discovery and Restricted Access Control | Preview | Not yet validated, SharePoint Online |
+| MP.AIGOV.1049 | Agents should not be able to share SharePoint content with external users | Preview | Validated, SharePoint Online |
+| MP.AIGOV.1050 | Only SharePoint admins should manage Restricted Content Discovery and Restricted Access Control | Preview | Pass branch validated, SharePoint Online |
 
 **Scope of the connector checks.** MP.AIGOV.1007, 1008, 1010, 1011, 1016, 1038 and 1039 only report on catalog
 packages users can reach: a package that is blocked (`isBlocked`) or allowed for no one
@@ -85,6 +85,16 @@ Connect-Maester -Service Graph, ExchangeOnline, SecurityCompliance, Azure, Share
 
 MP.AIGOV.1042 reads an API that supports delegated permissions only, so it skips in an app-only run.
 MP.AIGOV.1037 needs Microsoft Defender XDR with Microsoft Agent 365 for the `AgentsInfo` table.
+
+**SharePoint on Maester 3.0.** On Nov 19, 2026 (Maester 3.0.0-rc83, PnP.PowerShell 3.5.0, PowerShell 7.7) `Connect-Maester
+-Service SharePointOnline` failed with `Method not found: ...AuthenticationManager.CreateWithInteractiveWebBrowserLogin`:
+most likely because Maester loads the Microsoft Graph sign-in module first and its MSAL version clashes with PnP's. Signing in with PnP
+before any Maester command works, and Maester reuses that session. Run the SharePoint checks in their own window:
+
+```powershell
+Connect-PnPOnline -Url https://<tenant>-admin.sharepoint.com -ClientId '<PnP app client ID>' -Interactive
+Invoke-Maester -Pack AIGOV -SkipBuiltIn -TestId 'MP.AIGOV.1049','MP.AIGOV.1050'
+```
 
 **Settings.** Nine tests read `GlobalSettings` from `maester-config.json`:
 

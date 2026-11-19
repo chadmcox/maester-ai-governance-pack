@@ -24,7 +24,8 @@ disclosure); NIST 800-53 AC-6.
 
 > [!NOTE]
 > **Settings confirmed Nov 19, 2026:** `Get-PnPTenant` returned both settings (`...Configuration` names, both
-> `False`) on a test tenant. The full Maester run of this check is still pending.
+> `False`) on a test tenant. **Live run** Nov 19, 2026 (Maester 3.0.0-rc83, PnP.PowerShell 3.5.0): **Passed** with
+> both settings read under their PnP names. The pass branch is validated live; the fail branch is unit-tested only.
 
 #### Remediation action
 
