@@ -52,6 +52,7 @@ function Test-MPAIGOV1052 {
     )
 
     # RiskIndicators is a property bag keyed by indicator ID; kind=array turns each entry into [key, value].
+    # 'title' is a KQL keyword, so the indicator's properties are read with brackets.
     $Query = @'
 AgentsInfo
 | summarize arg_max(Timestamp, *) by AgentId
@@ -64,10 +65,10 @@ AgentsInfo
 | where LifecycleStatus_ !in~ ("Deleted", "Uninstalled", "Blocked")
 | mv-expand kind=array Risk = Risk_
 | extend Indicator = todynamic(Risk[1])
-| where isnotempty(tostring(Indicator.title)) and tobool(Indicator.isActive) == true and tobool(Indicator.isExposure) == true
+| where isnotempty(tostring(Indicator['title'])) and tobool(Indicator['isActive']) == true and tobool(Indicator['isExposure']) == true
 | project AgentId, AgentName = AgentName_, Platform, PublishedStatus = PublishedStatus_,
     HasOwners = Owners_ !in ("", "[]", "{}", "null"), HasSourceId = isnotempty(SourceAgentId_),
-    Title = tostring(Indicator.title), Severity = tostring(Indicator.severity)
+    Title = tostring(Indicator['title']), Severity = tostring(Indicator['severity'])
 '@
 
     try {

@@ -1432,6 +1432,8 @@ NIST 800-53 AT-2.
 > test tenant, so this check should fail there. The Maester run of this check is still pending. On Maester 3.0 RC,
 > sign in with `Connect-PnPOnline` before any Maester command (see the README).
 
+**Live run** Nov 19, 2026: **Failed** (Low) as expected, `EnableAgentWorkerSharingDisclaimer` = False. Validated live.
+
 <a id="mp-aigov-1052"></a>
 
 ## MP.AIGOV.1052: Agents should not have active risk indicators in Microsoft Defender
@@ -1458,6 +1460,9 @@ Agentic AI (continuous monitoring); NIST 800-53 RA-5.
 > [!NOTE]
 > **Data shape confirmed Nov 19, 2026** from a live `AgentsInfo` sample: `RiskIndicators` is a property bag
 > keyed by indicator ID. The query that expands it hasn't run inside Maester yet.
+
+**Live run** Nov 19, 2026 (Maester 3.0.0-rc83): the first version errored because `title` is a KQL keyword
+(`Indicator.title` must be written `Indicator['title']`). Fixed; rerun pending.
 
 <a id="mp-aigov-1053"></a>
 
@@ -1487,6 +1492,9 @@ and human-in-the-loop); NIST 800-53 SC-8.
 > `name`, `type`, `endpoint`, and for Copilot Studio `approvalModeKind` and `authenticationUsed`. Only the value
 > `always_allow` has been seen; what other values mean is unconfirmed. The query hasn't run inside Maester yet.
 
+**Live run** Nov 19, 2026: **Passed**, 1 MCP server on an agent in use (a Copilot Studio draft with `always_allow`,
+correctly not flagged because the agent isn't published). The fail branches are unit-tested only.
+
 <a id="mp-aigov-1054"></a>
 
 ## MP.AIGOV.1054: Microsoft Entra diagnostic settings should export the agent risk logs
@@ -1512,6 +1520,9 @@ Frameworks: MCSB v2 AI-6 (monitoring and detection); Five Eyes Careful Adoption 
 > [!NOTE]
 > **Categories confirmed Nov 19, 2026:** a test tenant's `diagnosticSettingsCategories` listed `RiskyAgents` and
 > `AgentRiskEvents`. There is no separate agent sign-in category. The check hasn't run inside Maester yet.
+
+**Live run** Nov 19, 2026: **Failed** (Medium) on the test tenant: neither `RiskyAgents` nor `AgentRiskEvents` is
+exported. The fail branch is validated live.
 
 <a id="mp-aigov-1055"></a>
 
@@ -1539,3 +1550,6 @@ Careful Adoption of Agentic AI (human oversight); NIST 800-53 CM-7.
 > [!NOTE]
 > **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). The query follows Microsoft's
 > documented example; the sample from the test tenant had local agents but didn't include `RawAgentInfo`.
+
+**Live run** Nov 19, 2026: **Passed**, 3 local AI agents, none auto-approving or in an untrusted process. The fail
+branch is unit-tested only.
