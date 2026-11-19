@@ -1,20 +1,4 @@
-> [!NOTE]
-> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
-> catalog API was reachable with `CopilotPackages.Read.All` alone). The run correctly **Failed**
-> (true positive), finding 1 real package ("Copilot Code") with a directly assigned user. The
-> per-package detail call's `allowedUsersAndGroups`/`acquireUsersAndGroups` field names and
-> `resourceType` values matched the live schema. This test is slow (iterates every package's detail
-> individually) — expect several minutes against a catalog with hundreds of packages.
->
-> Nov 18, 2026: a throttled run passed even though some package reads had failed. Fixed: unread packages are now
-> counted. If none can be read the test skips with an error; if the rest are clean it skips as a partial check;
-> beside a finding it notes how many weren't read.
-
-Checks whether an agent is assigned directly to individual users instead of through a group. The
-audience collections (`allowedUsersAndGroups`, `acquireUsersAndGroups`) are only returned by the
-per-package detail call (`GET /copilot/admin/catalog/packages/{id}`) — the list call does not return
-them, so this test reads every package's detail individually. A direct user assignment has no group
-to audit membership through and no single place to see who has access.
+When an agent is given to people one by one, nobody can review who has it in one place, and access doesn't change when people move teams or leave. Assigning through a group puts the audience under the same owner, review and lifecycle controls as the rest of your access.
 
 #### Remediation action
 
@@ -24,6 +8,7 @@ assign the agent to the group, and remove the direct user assignments.
 #### Related links
 
 - [Get Copilot package](https://learn.microsoft.com/graph/api/copilotadmin-get-package?view=graph-rest-1.0)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1003)
 
 <!--- Results --->
 %TestResult%

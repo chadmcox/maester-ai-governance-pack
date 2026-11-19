@@ -76,3 +76,31 @@ Describe 'Test-MPAIGOV1050' {
         Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'Custom' }
     }
 }
+
+Describe 'Test-MPAIGOV1051' {
+    BeforeAll { . "$PSScriptRoot/../pack/tests/Test.MP.AIGOV.1051.ps1" }
+    BeforeEach { Mock Add-MtTestResultDetail {} }
+
+    It 'passes when the disclaimer is on' {
+        Mock Get-MtSpo { [pscustomobject]@{ EnableAgentWorkerSharingDisclaimer = $true } }
+        Test-MPAIGOV1051 | Should -Be $true
+    }
+
+    It 'fails Low when the disclaimer is off' {
+        Mock Get-MtSpo { [pscustomobject]@{ EnableAgentWorkerSharingDisclaimer = $false } }
+        Test-MPAIGOV1051 | Should -Be $false
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $Severity -eq 'Low' -and $Result -match 'EnableAgentWorkerSharingDisclaimer \| False' }
+    }
+
+    It 'skips when the setting is not returned' {
+        Mock Get-MtSpo { [pscustomobject]@{ SharingCapability = 'Disabled' } }
+        Test-MPAIGOV1051 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'Custom' -and $SkippedCustomReason -match 'preview' }
+    }
+
+    It 'skips when SharePoint cannot be read' {
+        Mock Get-MtSpo { throw 'not connected' }
+        Test-MPAIGOV1051 | Should -BeNullOrEmpty
+        Should -Invoke Add-MtTestResultDetail -Times 1 -ParameterFilter { $SkippedBecause -eq 'Custom' }
+    }
+}

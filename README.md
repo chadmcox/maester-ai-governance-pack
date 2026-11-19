@@ -13,6 +13,10 @@ the installed pack -- see the comment in
 
 ## Tests
 
+In the Maester report, each test's page says why the check matters and how to fix it. What each check reads,
+its exact pass and fail rules, its settings and the notes from live test runs are in
+[`docs/how-checks-work.md`](docs/how-checks-work.md).
+
 | ID | Title | Lifecycle | Status |
 | --- | --- | --- | --- |
 | MP.AIGOV.1001 | Agent catalog adoption is below a configurable threshold over the D90 report period | Preview | Adoption branch not yet validated, Graph only |
@@ -61,6 +65,11 @@ the installed pack -- see the comment in
 | MP.AIGOV.1048 | Azure AI model deployments should only use approved models | Preview | Not yet validated, Azure |
 | MP.AIGOV.1049 | Agents should not be able to share SharePoint content with external users | Preview | Validated, SharePoint Online |
 | MP.AIGOV.1050 | Only SharePoint admins should manage Restricted Content Discovery and Restricted Access Control | Preview | Pass branch validated, SharePoint Online |
+| MP.AIGOV.1051 | Users should see a disclaimer before they share SharePoint content with an agent | Preview | Setting confirmed, SharePoint Online |
+| MP.AIGOV.1052 | Agents should not have active risk indicators in Microsoft Defender | Preview | Data shape confirmed, Graph only |
+| MP.AIGOV.1053 | MCP servers on agents found by Microsoft Defender should use HTTPS, trusted hosts and approval | Preview | Data shape confirmed, Graph only |
+| MP.AIGOV.1054 | Microsoft Entra diagnostic settings should export the agent risk logs | Preview | Categories confirmed, Azure |
+| MP.AIGOV.1055 | Local AI agents should ask before acting and run in a trusted process | Preview | Not yet validated, Graph only |
 
 **Scope of the connector checks.** MP.AIGOV.1007, 1008, 1010, 1011, 1016, 1038 and 1039 only report on catalog
 packages users can reach: a package that is blocked (`isBlocked`) or allowed for no one
@@ -68,7 +77,7 @@ packages users can reach: a package that is blocked (`isBlocked`) or allowed for
 does the same for synced Copilot connectors, covering only connections in the `ready` or
 `limitExceeded` state.
 
-**Connections.** Tests 1001–1042 need only Microsoft Graph. Eight tests reach other services Maester already
+**Connections.** Tests 1001–1042 need only Microsoft Graph. Ten tests reach other services Maester already
 connects to; they skip when that service isn't connected:
 
 ```powershell
@@ -81,7 +90,8 @@ Connect-Maester -Service Graph, ExchangeOnline, SecurityCompliance, Azure, Share
 | MP.AIGOV.1044 | Security & Compliance | Audit log retention policies aren't in Graph |
 | MP.AIGOV.1045 | Azure | Azure OpenAI and AI Services accounts and Defender plans |
 | MP.AIGOV.1046–1048 | Azure | Model deployments, content filters (RAI policies) and diagnostic settings of those accounts. Reader on the subscriptions is enough |
-| MP.AIGOV.1049–1050 | SharePoint Online | Tenant settings for agents and oversharing controls aren't in Graph. Uses Maester's PnP connection; some settings are preview and newer than older PnP.PowerShell versions |
+| MP.AIGOV.1054 | Azure | Microsoft Entra diagnostic settings (`microsoft.aadiam`), read the same way as Maester core's CISA MS.AAD.4.1 |
+| MP.AIGOV.1049–1051 | SharePoint Online | Tenant settings for agents and oversharing controls aren't in Graph. Uses Maester's PnP connection; some settings are preview and newer than older PnP.PowerShell versions |
 
 MP.AIGOV.1042 reads an API that supports delegated permissions only, so it skips in an app-only run.
 MP.AIGOV.1037 needs Microsoft Defender XDR with Microsoft Agent 365 for the `AgentsInfo` table.
@@ -96,7 +106,7 @@ Connect-PnPOnline -Url https://<tenant>-admin.sharepoint.com -ClientId '<PnP app
 Invoke-Maester -Pack AIGOV -SkipBuiltIn -TestId 'MP.AIGOV.1049','MP.AIGOV.1050'
 ```
 
-**Settings.** Nine tests read `GlobalSettings` from `maester-config.json`:
+**Settings.** Eleven tests read `GlobalSettings` from `maester-config.json`:
 
 | Setting | Default | Used by |
 | --- | --- | --- |
@@ -109,6 +119,8 @@ Invoke-Maester -Pack AIGOV -SkipBuiltIn -TestId 'MP.AIGOV.1049','MP.AIGOV.1050'
 | `AIGOV.RequireIndirectAttackFilter` | `false`; set `true` if your apps pass documents or tool results to the model | MP.AIGOV.1046 |
 | `AIGOV.RequiredAiLogCategories` | `Audit`, `RequestResponse` | MP.AIGOV.1047 |
 | `AIGOV.ApprovedModels` | empty (test skips); list approved models as `name` or `name:version`, wildcards allowed | MP.AIGOV.1048 |
+| `AIGOV.MinAgentRiskSeverity` | `Medium` | MP.AIGOV.1052 |
+| `AIGOV.RequiredAgentLogCategories` | `RiskyAgents`, `AgentRiskEvents` | MP.AIGOV.1054 |
 
 See [`docs/pilot-and-open-questions.md`](docs/pilot-and-open-questions.md) for the full data-source
 and skip-condition rationale behind each test, and [`docs/coverage-matrix.md`](docs/coverage-matrix.md)

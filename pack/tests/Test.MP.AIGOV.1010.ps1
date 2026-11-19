@@ -50,7 +50,7 @@ function Test-MPAIGOV1010 {
             'microsoft.com', 'microsoftonline.com', 'azure.com', 'azurewebsites.net',
             'dynamics.com', 'powerplatform.com', 'powerapps.com', 'powerbi.com',
             'office.com', 'office365.com', 'sharepoint.com', 'windows.net',
-            'msidentity.com', 'visualstudio.com'
+            'msidentity.com', 'visualstudio.com', 'cloud.microsoft'
         )
     )
 

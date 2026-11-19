@@ -1,24 +1,4 @@
-Checks that every enabled agent identity still has an active sponsor. Reads
-`GET /servicePrincipals/microsoft.graph.agentIdentity`, then each enabled agent identity's
-`/microsoft.graph.agentIdentity/sponsors`. A sponsor is active when it is a group, or a user whose `accountEnabled`
-isn't false.
-
-An enabled agent identity fails when it has no sponsors left or every sponsor is disabled. Entra requires a
-sponsor when an agent identity is created, so this usually means a sponsor left without a Lifecycle Workflows
-sponsor transfer.
-
-`MT.1205` covers sponsors on blueprints and blueprint principals only; `MP.AIGOV.1004` flags exactly one sponsor with
-zero owners.
-
-Framework: CISA draft SCuBA agent baseline MS.SI.3.1 (every agent SHALL have a sponsor and an owner); NIST 800-53 AC-2.
-
-> [!NOTE]
-> **Validated** Nov 18, 2026 against a live test tenant. Correctly **Passed** (true negative):
-> all 11 enabled agent identities had one sponsor. Independent reads of the derived-type sponsor
-> navigation returned `@odata.type` `#microsoft.graph.user` and `accountEnabled=true` for all 11.
->
-> **Seeded rerun** Nov 18, 2026: an agent identity whose only sponsor was a disabled user (a test object created for this run and removed afterwards) was
-> reported with "every sponsor is disabled", as expected. Both branches are now proven live.
+A sponsor is the person accountable for an agent's purpose. When every sponsor has left or been disabled, nobody reviews the agent, approves its access or retires it, but it keeps working with its permissions.
 
 #### Remediation action
 
@@ -29,6 +9,7 @@ identity sponsorships to manager* task to your mover and leaver Lifecycle Workfl
 
 - [Owners, sponsors and managers in Microsoft Entra Agent ID](https://learn.microsoft.com/entra/agent-id/agent-owners-sponsors-managers)
 - [Agent identity sponsor tasks in Lifecycle Workflows](https://learn.microsoft.com/entra/id-governance/agent-sponsor-tasks)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1036)
 
 <!--- Results --->
 %TestResult%

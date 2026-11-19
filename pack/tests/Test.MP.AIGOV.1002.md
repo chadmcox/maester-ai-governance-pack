@@ -1,13 +1,4 @@
-> [!NOTE]
-> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (F7-licensed; the package
-> catalog API was reachable with `CopilotPackages.Read.All` alone). The run correctly **Passed**:
-> no blocked package had an open pending install or consent request. The `requestStatus`/
-> `requestType` field names matched the live schema.
-
-Checks whether a package the tenant has blocked (`isBlocked`) still has an open pending install or
-consent request (`requestStatus`/`requestType`). A pending request against a blocked package means a
-user can still be waiting on, or an admin can still approve, an install the tenant already decided to
-block.
+You blocked this package for a reason, but a pending request means a user is still waiting for it and an admin could still approve it by mistake. Clearing the request closes the loop so a blocked agent can't be let back in through the request queue.
 
 #### Remediation action
 
@@ -17,6 +8,7 @@ why they were still able to request an install that was already blocked.
 #### Related links
 
 - [List Copilot packages](https://learn.microsoft.com/graph/api/copilotadmin-list-packages?view=graph-rest-1.0)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1002)
 
 <!--- Results --->
 %TestResult%

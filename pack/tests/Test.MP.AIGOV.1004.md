@@ -1,16 +1,4 @@
-> [!NOTE]
-> **Validated** 2026-11-05 against a real Microsoft 365 test tenant (Graph only, no Agent 365
-> license). The run correctly found 10 real Agent Identity / Agent Identity Blueprint objects with
-> exactly one sponsor and zero owners, with accurate object IDs, display names, and object types in
-> the result table.
-
-Checks every Agent Identity, Agent Identity Blueprint, and Blueprint Principal for exactly one
-assigned sponsor and zero owners. A sponsor provides organizational accountability for why the agent
-exists; an owner can administer the object itself. An object with one sponsor and no owners is a
-single point of failure: if that one person leaves or is disabled, nobody with a formal relationship
-to the object remains.
-
-Graph only — this test does not need a Microsoft Agent 365 license.
+An agent identity with one sponsor and no owners depends on a single person. If that person leaves or their account is disabled, nobody with a formal role is left to answer for the agent, fix it or retire it, and it keeps its access in the meantime.
 
 #### Remediation action
 
@@ -21,6 +9,7 @@ departure leaves it unaccounted for.
 
 - [List agentIdentityBlueprint sponsors](https://learn.microsoft.com/graph/api/agentidentityblueprint-list-sponsors?view=graph-rest-1.0)
 - [List servicePrincipal owners](https://learn.microsoft.com/graph/api/serviceprincipal-list-owners?view=graph-rest-1.0)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1004)
 
 <!--- Results --->
 %TestResult%

@@ -1,43 +1,4 @@
-Checks what your enforced Copilot DLP policies protect. Reads DLP policies and rules with Security & Compliance
-PowerShell (`Get-MtExo -Request DlpCompliancePolicy` and `DlpComplianceRule`). Only policies that target the Microsoft 365
-Copilot location, are enabled, in `Mode` `Enable` and not in simulation count, and only their rules that aren't
-disabled.
-
-| Protection | How a rule is recognized | Severity if missing |
-| --- | --- | --- |
-| Block prompts with sensitive info types | SIT condition + `RestrictAccess` `UploadText` or `ExcludeContentProcessing` = `Block` | Medium |
-| Block labeled files and email | Sensitivity label condition + `RestrictAccess` `ExcludeContentProcessing` = `Block` | Medium |
-| Block web search for sensitive prompts | `RestrictWebGrounding` = `true` | Low |
-| Exclude external email from grounding (preview) | `FromScope` `NotInOrganization` + the processing block | Low |
-
-When no enforced Copilot DLP policy exists the test skips: `MT.1175` and CIS M365 3.2.3 report that. Rule conditions
-are matched from the rule's text, so confirm a *Missing* row in the Purview portal. Blocking labeled content needs
-Microsoft 365 E5-level Purview; blocking prompts is available to all Copilot users.
-
-Framework: CISA draft SCuBA agent baseline MS.SI.10.2, 10.3, 10.5, 10.6; NIST 800-53 AC-4.
-
-> [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
-> tenant and check the result before relying on it.
->
-> Live attempt Nov 18, 2026 read 5 policies and 9 rules. The only Copilot policy was in
-> `TestWithNotifications` with `IsSimulationPolicy=true`; the skip for no enforced policy was
-> correct, not proof of rule coverage. Its `Locations` was a JSON string containing `Copilot.M365`,
-> and `EnforcementPlanes` included `CopilotExperiences`. Its rule used a `RestrictAccess` array
-> with `setting=UploadText`, `value=Block`, and a sensitive-information array of named conditions.
-> Synthetic fixtures now use these shapes. Matching recognizes the prompt-upload action and
-> requires the block value on the same action, without treating it as labeled-content grounding.
-> The user confirmed the simulation state and sensitive-prompt block in Purview. Enforced-rule
-> classification remains unvalidated because there was no enforced Copilot policy.
->
-> **Seeded rerun** Nov 18, 2026: an enforced Copilot policy made in the Purview portal (a test object created for this run and removed afterwards) blocked
-> prompts with Credit Card Number. The test failed (Medium) as expected, but reported 4 of 4 protections off: it
-> missed the prompt block. Portal-made rules store `RestrictAccess` as `value=Block` with no `setting`, and put
-> the activity in `AdvancedRule` as `HasActivity = UploadText`. Fixed: a block with no setting counts as a prompt
-> block when the rule's activity is `UploadText`, and as a content-processing block otherwise. Unit-tested with
-> the live shape; rerun to confirm it now reports 3 of 4.
->
-> **Rerun** Nov 19, 2026: reported **3 of 4** protections off, as expected after the fix. Validated live.
+Copilot DLP is what stops Copilot from processing sensitive prompts and labeled content. If an enforced policy leaves these protections off, sensitive data can still go into Copilot or come back in its answers.
 
 #### Remediation action
 
@@ -48,6 +9,7 @@ then turn them on.
 
 - [DLP for Microsoft 365 Copilot, Copilot Chat and Cowork](https://learn.microsoft.com/purview/dlp-microsoft365-copilot-location-learn-about)
 - [New-DlpComplianceRule](https://learn.microsoft.com/powershell/module/exchangepowershell/new-dlpcompliancerule)
+- [How this check works](https://github.com/chadmcox/maester-ai-governance-pack/blob/main/docs/how-checks-work.md#mp-aigov-1043)
 
 <!--- Results --->
 %TestResult%
