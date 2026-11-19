@@ -261,7 +261,7 @@ admin API, which Maester doesn't connect to.
 
 | # | Finding | Test | Data source | Framework mapping (Supporting) |
 |---|---|---|---|---|
-| R2-1 | Text model deployment has no content filter, or Prompt Shields for user prompts isn't blocking | `MP.AIGOV.1046` | ARM `accounts/deployments` (`raiPolicyName`) + `accounts/raiPolicies` (`contentFilters`); filter names matched by pattern (**verify live**) | MCSB v2 AI-2; OWASP LLM01, ASI01; SI-10 |
+| R2-1 | Text model deployment has no content filter, or Prompt Shields for user prompts isn't blocking | `MP.AIGOV.1046` | ARM `accounts/deployments` (`raiPolicyName`) + `accounts/raiPolicies` (`contentFilters`); `Jailbreak` filter name confirmed live Nov 19 | MCSB v2 AI-2; OWASP LLM01, ASI01; SI-10 |
 | R2-2 | AI account doesn't export Audit and RequestResponse resource logs | `MP.AIGOV.1047` | ARM `Microsoft.Insights/diagnosticSettings` on each account | MCSB v2 AI-6; Five Eyes agentic (logging); AU-2, AU-12 |
 | R2-3 | Model deployment uses a model not in `AIGOV.ApprovedModels` | `MP.AIGOV.1048` | ARM `accounts/deployments` (`properties.model`) | MCSB v2 AI-1; OWASP ASI04; CM-7 |
 | R2-4 | Agents can share SharePoint content with external users | `MP.AIGOV.1049` | SharePoint `Get-MtSpo` (`Get-PnPTenant`): `RestrictExternalSharingForAgents` (preview; confirmed returned Nov 19), `SharingCapability` | OWASP ASI02, ASI03; MCSB v2 AI-4; AC-21 |

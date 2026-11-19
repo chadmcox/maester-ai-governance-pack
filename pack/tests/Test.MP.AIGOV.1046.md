@@ -18,13 +18,17 @@ Frameworks: MCSB v2 AI-2 (multi-layered content filtering); OWASP LLM01 (prompt 
 goal hijack); NIST 800-53 SI-10.
 
 > [!NOTE]
-> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). The control names
+> The control names
 > (`Jailbreak` or "user prompt attack"; "indirect" or "document attack") are matched by pattern, and a
-> control counts as blocking when `blocking` is true or `action` is `BLOCKING`. Both still need a live check
-> against a real `raiPolicies` response. Run it against your tenant and check the result before relying on it.
+> control counts as blocking when `blocking` is true or `action` is `BLOCKING`.
 >
-> Live run Nov 19, 2026: the only AI account had no model deployments, so the test passed with "no text model
-> deployments". The filter checks are still unproven live.
+> **Seeded runs** Nov 19, 2026 (a gpt-5.4-mini deployment created for these runs in the test resource group):
+> with `Microsoft.DefaultV2` the test **Passed**; the account's `raiPolicies` list returned DefaultV2 with a
+> `Jailbreak` filter (`enabled`, `blocking`, source `Prompt`), so the name match, not the fallback, made the pass.
+> Switched to the older built-in `Microsoft.Default`, which has no Jailbreak filter, it **Failed** (Medium) with
+> "Prompt Shields for user prompts off or annotate-only". Both branches are validated live. The account also lists
+> `Microsoft.MAIDefault`, whose Jailbreak filter is on but not blocking. The indirect-attack filter name is still
+> unconfirmed: none of the built-in filters returned it.
 
 #### Remediation action
 

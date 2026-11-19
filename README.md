@@ -56,8 +56,8 @@ the installed pack -- see the comment in
 | MP.AIGOV.1043 | Copilot DLP policies should block sensitive prompts, labeled content, and web search for sensitive prompts | Preview | Validated (seeded), Security & Compliance |
 | MP.AIGOV.1044 | Copilot interaction audit records should be retained for at least your required period | Preview | Validated (missing-policy case), Security & Compliance |
 | MP.AIGOV.1045 | Azure OpenAI and AI Services accounts should require Entra auth, restrict network access and be covered by Defender for AI | Preview | Network and Defender branches validated (seeded), Azure |
-| MP.AIGOV.1046 | Azure AI model deployments should use a content filter that blocks prompt attacks | Preview | Not yet validated, Azure |
-| MP.AIGOV.1047 | Azure OpenAI and AI Services accounts should export their audit and request logs | Preview | Not yet validated, Azure |
+| MP.AIGOV.1046 | Azure AI model deployments should use a content filter that blocks prompt attacks | Preview | Validated (seeded), Azure |
+| MP.AIGOV.1047 | Azure OpenAI and AI Services accounts should export their audit and request logs | Preview | Pass branch validated, Azure |
 | MP.AIGOV.1048 | Azure AI model deployments should only use approved models | Preview | Not yet validated, Azure |
 | MP.AIGOV.1049 | Agents should not be able to share SharePoint content with external users | Preview | Validated, SharePoint Online |
 | MP.AIGOV.1050 | Only SharePoint admins should manage Restricted Content Discovery and Restricted Access Control | Preview | Pass branch validated, SharePoint Online |

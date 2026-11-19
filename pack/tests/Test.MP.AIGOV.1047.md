@@ -19,8 +19,9 @@ NIST 800-53 AU-2, AU-12.
 > **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data). Run it against your
 > tenant and check the result before relying on it.
 >
-> Live run Nov 19, 2026: Passed on the one AI account in the test tenant (Audit and RequestResponse exported).
-> The failure branch is still unproven live.
+> Live run Nov 19, 2026: **Passed** on the one AI account in the test tenant. A direct ARM read confirmed it: a
+> diagnostic setting deployed by Azure Policy sends the `allLogs` category group to Log Analytics (its separate
+> `Audit` group entry was disabled and correctly ignored). The failure branch is still unproven live.
 
 #### Remediation action
 
