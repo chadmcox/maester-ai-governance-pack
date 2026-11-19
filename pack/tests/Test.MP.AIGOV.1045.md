@@ -23,6 +23,8 @@ Framework: NIST 800-53 IA-2, SC-7, SI-4.
 > correctly **Failed**: public network access with default action `Allow`, and Defender for AI Services on the
 > `Free` tier. Key auth was not reported, correctly: the portal created the account with `disableLocalAuth=true`.
 > Resource Graph and a direct ARM read agreed. The key-auth branch is still unproven live.
+>
+> Rerun Nov 19, 2026 (Maester 3.0.0-rc83): same result, Failed for public network access and Defender `Free`.
 
 #### Remediation action
 

@@ -22,6 +22,9 @@ goal hijack); NIST 800-53 SI-10.
 > (`Jailbreak` or "user prompt attack"; "indirect" or "document attack") are matched by pattern, and a
 > control counts as blocking when `blocking` is true or `action` is `BLOCKING`. Both still need a live check
 > against a real `raiPolicies` response. Run it against your tenant and check the result before relying on it.
+>
+> Live run Nov 19, 2026: the only AI account had no model deployments, so the test passed with "no text model
+> deployments". The filter checks are still unproven live.
 
 #### Remediation action
 

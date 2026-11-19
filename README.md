@@ -49,13 +49,13 @@ the installed pack -- see the comment in
 | MP.AIGOV.1036 | Enabled agent identities should have at least one active sponsor | Preview | Validated, Graph only |
 | MP.AIGOV.1037 | Agents discovered by Microsoft Defender should have a Microsoft Entra identity | Preview | Validated (catalog vendor agents reported for information), Graph (advanced hunting) |
 | MP.AIGOV.1038 | MCP tools should match the definitions you approved | Preview | Not yet validated, Graph only |
-| MP.AIGOV.1039 | MCP tool descriptions should describe the tool, not instruct the model | Preview | Not yet validated, Graph only |
+| MP.AIGOV.1039 | MCP tool descriptions should describe the tool, not instruct the model | Preview | Steering branch validated (seeded), Graph only |
 | MP.AIGOV.1040 | Sensitivity labels should include a sites and groups label and use unique names | Preview | Validated, Graph only |
 | MP.AIGOV.1041 | Agent identity blueprints from other organizations should come from a verified publisher | Preview | Not yet validated, Graph only |
 | MP.AIGOV.1042 | Web search in Copilot should be off, or limited to Web mode | Preview | Validated (unconfigured-policy case), Graph (delegated only) |
-| MP.AIGOV.1043 | Copilot DLP policies should block sensitive prompts, labeled content, and web search for sensitive prompts | Preview | Not yet validated, Security & Compliance |
+| MP.AIGOV.1043 | Copilot DLP policies should block sensitive prompts, labeled content, and web search for sensitive prompts | Preview | Validated (seeded), Security & Compliance |
 | MP.AIGOV.1044 | Copilot interaction audit records should be retained for at least your required period | Preview | Validated (missing-policy case), Security & Compliance |
-| MP.AIGOV.1045 | Azure OpenAI and AI Services accounts should require Entra auth, restrict network access and be covered by Defender for AI | Preview | Not yet validated, Azure |
+| MP.AIGOV.1045 | Azure OpenAI and AI Services accounts should require Entra auth, restrict network access and be covered by Defender for AI | Preview | Network and Defender branches validated (seeded), Azure |
 | MP.AIGOV.1046 | Azure AI model deployments should use a content filter that blocks prompt attacks | Preview | Not yet validated, Azure |
 | MP.AIGOV.1047 | Azure OpenAI and AI Services accounts should export their audit and request logs | Preview | Not yet validated, Azure |
 | MP.AIGOV.1048 | Azure AI model deployments should only use approved models | Preview | Not yet validated, Azure |
