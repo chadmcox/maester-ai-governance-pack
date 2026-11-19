@@ -249,6 +249,29 @@ mapped.
 | G38 | CopilotInteraction audit records kept less than required | `MP.AIGOV.1044` | S&C `Get-UnifiedAuditLogRetentionPolicy` | MS.SI.5.1, 11.4 (draft); AU-11 |
 | G39 | Azure OpenAI / AI Services account allows key auth or public access, or Defender for AI Services is off | `MP.AIGOV.1045` | Azure Resource Graph + ARM `Microsoft.Security/pricings/AI` | IA-2, SC-7, SI-4 |
 
+### Round 2: MCSB v2 AI and OWASP agentic (Nov 18, 2026)
+
+Candidates came from MCSB v2 Artificial Intelligence Security (AI-1 to AI-7), the OWASP Top 10 for Agentic
+Applications (ASI01–ASI10, Dec 9, 2025) and Five Eyes *Careful Adoption of Agentic AI Services*. Built first are
+the three that use documented Azure Resource Manager properties and the same Azure connection as 1045, then two
+SharePoint tenant settings read through Maester's SharePoint (PnP) connection. Maester core has no check for these.
+All five are unit-tested only. Per-site Restricted Content Discovery and tenant-wide Power Platform data policies
+stay out: the first needs a per-site scan or the SharePoint Online report cmdlets, the second the Power Platform
+admin API, which Maester doesn't connect to.
+
+| # | Finding | Test | Data source | Framework mapping (Supporting) |
+|---|---|---|---|---|
+| R2-1 | Text model deployment has no content filter, or Prompt Shields for user prompts isn't blocking | `MP.AIGOV.1046` | ARM `accounts/deployments` (`raiPolicyName`) + `accounts/raiPolicies` (`contentFilters`); filter names matched by pattern (**verify live**) | MCSB v2 AI-2; OWASP LLM01, ASI01; SI-10 |
+| R2-2 | AI account doesn't export Audit and RequestResponse resource logs | `MP.AIGOV.1047` | ARM `Microsoft.Insights/diagnosticSettings` on each account | MCSB v2 AI-6; Five Eyes agentic (logging); AU-2, AU-12 |
+| R2-3 | Model deployment uses a model not in `AIGOV.ApprovedModels` | `MP.AIGOV.1048` | ARM `accounts/deployments` (`properties.model`) | MCSB v2 AI-1; OWASP ASI04; CM-7 |
+| R2-4 | Agents can share SharePoint content with external users | `MP.AIGOV.1049` | SharePoint `Get-MtSpo` (`Get-PnPTenant`): `RestrictExternalSharingForAgents` (preview; confirmed returned Nov 19), `SharingCapability` | OWASP ASI02, ASI03; MCSB v2 AI-4; AC-21 |
+| R2-5 | Site admins can turn off Restricted Content Discovery or Restricted Access Control | `MP.AIGOV.1050` | SharePoint `Get-MtSpo`: `DelegateRestrictedContentDiscoveryConfiguration`, `DelegateRestrictedAccessControlConfiguration` (PnP names; SPO names also read; confirmed returned Nov 19) | Zero Trust for Copilot (oversharing); OWASP LLM02; AC-6 |
+
+Still candidates (need a live `AgentsInfo` sample before building): Defender risk indicators on agents (ASI10),
+Defender-found MCP servers against the 1008/1010/1016 rules (ASI02, ASI04), agent-to-agent calls to
+unregistered agents (ASI07, ASI08). Also a candidate (SharePoint, same connection as 1049): a disclaimer before
+users share with an agent, `EnableAgentWorkerSharingDisclaimer` (preview; PnP returned it on Nov 19).
+
 ### Live review (Nov 18, 2026)
 
 The local pack was run with the pinned Maester source and delegated connections, with raw evidence kept

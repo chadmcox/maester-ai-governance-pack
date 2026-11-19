@@ -56,6 +56,11 @@ the installed pack -- see the comment in
 | MP.AIGOV.1043 | Copilot DLP policies should block sensitive prompts, labeled content, and web search for sensitive prompts | Preview | Not yet validated, Security & Compliance |
 | MP.AIGOV.1044 | Copilot interaction audit records should be retained for at least your required period | Preview | Validated (missing-policy case), Security & Compliance |
 | MP.AIGOV.1045 | Azure OpenAI and AI Services accounts should require Entra auth, restrict network access and be covered by Defender for AI | Preview | Not yet validated, Azure |
+| MP.AIGOV.1046 | Azure AI model deployments should use a content filter that blocks prompt attacks | Preview | Not yet validated, Azure |
+| MP.AIGOV.1047 | Azure OpenAI and AI Services accounts should export their audit and request logs | Preview | Not yet validated, Azure |
+| MP.AIGOV.1048 | Azure AI model deployments should only use approved models | Preview | Not yet validated, Azure |
+| MP.AIGOV.1049 | Agents should not be able to share SharePoint content with external users | Preview | Not yet validated, SharePoint Online |
+| MP.AIGOV.1050 | Only SharePoint admins should manage Restricted Content Discovery and Restricted Access Control | Preview | Not yet validated, SharePoint Online |
 
 **Scope of the connector checks.** MP.AIGOV.1007, 1008, 1010, 1011, 1016, 1038 and 1039 only report on catalog
 packages users can reach: a package that is blocked (`isBlocked`) or allowed for no one
@@ -63,11 +68,11 @@ packages users can reach: a package that is blocked (`isBlocked`) or allowed for
 does the same for synced Copilot connectors, covering only connections in the `ready` or
 `limitExceeded` state.
 
-**Connections.** Tests 1001–1042 need only Microsoft Graph. Three tests reach other services Maester already
+**Connections.** Tests 1001–1042 need only Microsoft Graph. Eight tests reach other services Maester already
 connects to; they skip when that service isn't connected:
 
 ```powershell
-Connect-Maester -Service Graph, ExchangeOnline, SecurityCompliance, Azure
+Connect-Maester -Service Graph, ExchangeOnline, SecurityCompliance, Azure, SharePointOnline
 ```
 
 | Test | Service | Why |
@@ -75,11 +80,13 @@ Connect-Maester -Service Graph, ExchangeOnline, SecurityCompliance, Azure
 | MP.AIGOV.1043 | Exchange Online + Security & Compliance | DLP rule actions for the Copilot location aren't in Graph |
 | MP.AIGOV.1044 | Security & Compliance | Audit log retention policies aren't in Graph |
 | MP.AIGOV.1045 | Azure | Azure OpenAI and AI Services accounts and Defender plans |
+| MP.AIGOV.1046–1048 | Azure | Model deployments, content filters (RAI policies) and diagnostic settings of those accounts. Reader on the subscriptions is enough |
+| MP.AIGOV.1049–1050 | SharePoint Online | Tenant settings for agents and oversharing controls aren't in Graph. Uses Maester's PnP connection; some settings are preview and newer than older PnP.PowerShell versions |
 
 MP.AIGOV.1042 reads an API that supports delegated permissions only, so it skips in an app-only run.
 MP.AIGOV.1037 needs Microsoft Defender XDR with Microsoft Agent 365 for the `AgentsInfo` table.
 
-**Settings.** Six tests read `GlobalSettings` from `maester-config.json`:
+**Settings.** Nine tests read `GlobalSettings` from `maester-config.json`:
 
 | Setting | Default | Used by |
 | --- | --- | --- |
@@ -89,6 +96,9 @@ MP.AIGOV.1037 needs Microsoft Defender XDR with Microsoft Agent 365 for the `Age
 | `AIGOV.McpToolBaseline` | empty (test skips and prints current fingerprints) | MP.AIGOV.1038 |
 | `AIGOV.McpSteeringPatterns` | 8 built-in patterns | MP.AIGOV.1039 |
 | `AIGOV.MinimumAiAuditRetention` | `TwelveMonths` | MP.AIGOV.1044 |
+| `AIGOV.RequireIndirectAttackFilter` | `false`; set `true` if your apps pass documents or tool results to the model | MP.AIGOV.1046 |
+| `AIGOV.RequiredAiLogCategories` | `Audit`, `RequestResponse` | MP.AIGOV.1047 |
+| `AIGOV.ApprovedModels` | empty (test skips); list approved models as `name` or `name:version`, wildcards allowed | MP.AIGOV.1048 |
 
 See [`docs/pilot-and-open-questions.md`](docs/pilot-and-open-questions.md) for the full data-source
 and skip-condition rationale behind each test, and [`docs/coverage-matrix.md`](docs/coverage-matrix.md)
