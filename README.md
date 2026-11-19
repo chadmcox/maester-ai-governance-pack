@@ -66,7 +66,7 @@ its exact pass and fail rules, its settings and the notes from live test runs ar
 | MP.AIGOV.1049 | Agents should not be able to share SharePoint content with external users | Preview | Validated, SharePoint Online |
 | MP.AIGOV.1050 | Only SharePoint admins should manage Restricted Content Discovery and Restricted Access Control | Preview | Pass branch validated, SharePoint Online |
 | MP.AIGOV.1051 | Users should see a disclaimer before they share SharePoint content with an agent | Preview | Fail branch validated, SharePoint Online |
-| MP.AIGOV.1052 | Agents should not have active risk indicators in Microsoft Defender | Preview | Data shape confirmed, Graph only |
+| MP.AIGOV.1052 | Agents should not have active risk indicators in Microsoft Defender | Preview | Fail branch validated, Graph only |
 | MP.AIGOV.1053 | MCP servers on agents found by Microsoft Defender should use HTTPS, trusted hosts and approval | Preview | Pass branch validated, Graph only |
 | MP.AIGOV.1054 | Microsoft Entra diagnostic settings should export the agent risk logs | Preview | Fail branch validated, Azure |
 | MP.AIGOV.1055 | Local AI agents should ask before acting and run in a trusted process | Preview | Pass branch validated, Graph only |

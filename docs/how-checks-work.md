@@ -1462,7 +1462,9 @@ Agentic AI (continuous monitoring); NIST 800-53 RA-5.
 > keyed by indicator ID. The query that expands it hasn't run inside Maester yet.
 
 **Live run** Nov 19, 2026 (Maester 3.0.0-rc83): the first version errored because `title` is a KQL keyword
-(`Indicator.title` must be written `Indicator['title']`). Fixed; rerun pending.
+(`Indicator.title` must be written `Indicator['title']`). After the fix it **Failed** (Medium) as expected: 5 agents,
+three local agents "Running on a Device with Vulnerabilities" (High) and two Copilot Studio agents "Dormant agent"
+(Medium); one Low "Published Agent" indicator was counted in the note only. Validated live.
 
 <a id="mp-aigov-1053"></a>
 
