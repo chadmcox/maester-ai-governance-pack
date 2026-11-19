@@ -36,6 +36,8 @@ Framework: CISA draft SCuBA agent baseline MS.SI.10.2, 10.3, 10.5, 10.6; NIST 80
 > the activity in `AdvancedRule` as `HasActivity = UploadText`. Fixed: a block with no setting counts as a prompt
 > block when the rule's activity is `UploadText`, and as a content-processing block otherwise. Unit-tested with
 > the live shape; rerun to confirm it now reports 3 of 4.
+>
+> **Rerun** Nov 19, 2026: reported **3 of 4** protections off, as expected after the fix. Validated live.
 
 #### Remediation action
 

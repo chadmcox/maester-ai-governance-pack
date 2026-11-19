@@ -23,6 +23,10 @@ language, validate tool selection); NIST 800-53 SI-10.
 > Seeded attempt Nov 18, 2026: a custom app declaring two MCP tools was uploaded in the Teams admin center, but it
 > did not appear in the Copilot package catalog within an hour, so it couldn't be evaluated. A source review found
 > that a tool with both steering text and no annotations was reported for steering text only; it now lists both.
+>
+> **Seeded rerun** Nov 19, 2026: the custom app (a test object created for this run) reached the catalog. The test
+> **Failed** (Medium) as expected: 1 tool with steering text, 0 tools without annotations. The steering branch is
+> validated live; the no-annotations branch is still unit-tested only.
 
 Packages that omit `mcpToolDescription.tools` are listed in the result; tools from the other packages are
 still checked, and any steering text or missing annotation fails the test. With no findings but some packages

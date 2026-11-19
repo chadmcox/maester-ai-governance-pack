@@ -29,6 +29,9 @@ currency); CIS Controls v8.1 MCP Companion Guide; NIST 800-53 CM-2, CM-3.
 > Live attempt Nov 18, 2026: both reachable MCP packages exposed only `mcpServerUrl`, not tool
 > definitions. The test now skips explicitly rather than printing an empty baseline as usable
 > evidence. Baseline approval, changed fingerprints and repeated-run stability remain unvalidated.
+>
+> Seeded rerun Nov 19, 2026: the seeded app's tool definitions were readable. The test skipped (no baseline) and
+> printed fingerprints for 2 tools, as designed. The drift branch still needs a run with a baseline set.
 
 Packages that omit `mcpToolDescription.tools` are listed in the result and left out of the comparison; their
 baseline entries aren't reported as removed. Tools from the other packages are still checked. Any drift fails
