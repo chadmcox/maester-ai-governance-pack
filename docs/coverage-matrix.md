@@ -278,6 +278,20 @@ Still candidates: agent-to-agent calls to unregistered agents (ASI07, ASI08), au
 guardrails and memory. A live `AgentsInfo` sample on Nov 19, 2026 had `ConnectedAgents`, `Triggers`, `Guardrails`,
 `Memory` and `Endpoints` empty for every agent, so there's nothing to check against yet.
 
+### Round 3: Foundry hosted agent egress (Nov 23, 2026)
+
+Found by the weekly API watch: network egress controls for Foundry hosted agents became generally available on
+Nov 17, 2026 (Azure update 571821). The rules are readable through Azure Resource Manager on the RAI policy, so this
+uses the same Azure connection as 1045–1048. Maester core has no check for it (searched commit `512a076`).
+
+| # | Finding | Test | Data source | Framework mapping (Supporting) |
+|---|---|---|---|---|
+| R3-1 | Hosted agent egress rules in `Audit` mode, default `Allow`, or an `Allow` rule for every host | `MP.AIGOV.1056` | ARM `accounts/raiPolicies` api-version `2026-09-01` (`egressPolicy.mode`, `defaultAction`, `rules`) | MCSB v2 AI-4; OWASP ASI02; SC-7 |
+
+Not built: tool-call and tool-response guardrail controls (`contentFilters` with `source` `PreToolCall` or
+`PostToolCall`), until a live sample confirms their filter names, and the `HITL` content filter action, which Microsoft
+lists without describing.
+
 ### Live review (Nov 18, 2026)
 
 The local pack was run with the pinned Maester source and delegated connections, with raw evidence kept
