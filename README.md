@@ -70,6 +70,7 @@ its exact pass and fail rules, its settings and the notes from live test runs ar
 | MP.AIGOV.1053 | MCP servers on agents found by Microsoft Defender should use HTTPS, trusted hosts and approval | Preview | Pass branch validated, Graph only |
 | MP.AIGOV.1054 | Microsoft Entra diagnostic settings should export the agent risk logs | Preview | Fail branch validated, Azure |
 | MP.AIGOV.1055 | Local AI agents should ask before acting and run in a trusted process | Preview | Pass branch validated, Graph only |
+| MP.AIGOV.1056 | Foundry hosted agent egress rules should be enforced and deny by default | Preview | Not yet validated, Azure |
 
 **Scope of the connector checks.** MP.AIGOV.1007, 1008, 1010, 1011, 1016, 1038 and 1039 only report on catalog
 packages users can reach: a package that is blocked (`isBlocked`) or allowed for no one
@@ -77,7 +78,7 @@ packages users can reach: a package that is blocked (`isBlocked`) or allowed for
 does the same for synced Copilot connectors, covering only connections in the `ready` or
 `limitExceeded` state.
 
-**Connections.** Tests 1001–1042 need only Microsoft Graph. Ten tests reach other services Maester already
+**Connections.** Tests 1001–1042 need only Microsoft Graph. Eleven tests reach other services Maester already
 connects to; they skip when that service isn't connected:
 
 ```powershell
@@ -90,6 +91,7 @@ Connect-Maester -Service Graph, ExchangeOnline, SecurityCompliance, Azure, Share
 | MP.AIGOV.1044 | Security & Compliance | Audit log retention policies aren't in Graph |
 | MP.AIGOV.1045 | Azure | Azure OpenAI and AI Services accounts and Defender plans |
 | MP.AIGOV.1046–1048 | Azure | Model deployments, content filters (RAI policies) and diagnostic settings of those accounts. Reader on the subscriptions is enough |
+| MP.AIGOV.1056 | Azure | Hosted agent egress rules on the same accounts' RAI policies (api-version `2026-09-01`). Reader is enough |
 | MP.AIGOV.1054 | Azure | Microsoft Entra diagnostic settings (`microsoft.aadiam`), read the same way as Maester core's CISA MS.AAD.4.1 |
 | MP.AIGOV.1049–1051 | SharePoint Online | Tenant settings for agents and oversharing controls aren't in Graph. Uses Maester's PnP connection; some settings are preview and newer than older PnP.PowerShell versions |
 

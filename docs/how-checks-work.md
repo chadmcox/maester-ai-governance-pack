@@ -1555,3 +1555,44 @@ Careful Adoption of Agentic AI (human oversight); NIST 800-53 CM-7.
 
 **Live run** Nov 19, 2026: **Passed**, 3 local AI agents, none auto-approving or in an untrusted process. The fail
 branch is unit-tested only.
+
+<a id="mp-aigov-1056"></a>
+
+## MP.AIGOV.1056: Foundry hosted agent egress rules should be enforced and deny by default
+
+Checks the network egress rules of Microsoft Foundry hosted agents. Reads the accounts from Azure Resource Graph
+(`Microsoft.CognitiveServices/accounts` of kind `OpenAI` or `AIServices`), then each account's RAI policies
+(`{account}/raiPolicies`) from Azure Resource Manager with api-version `2026-09-01`. Egress rules are stored on the
+RAI policy (guardrail) a hosted agent uses, in `properties.egressPolicy`; older api-versions such as `2026-07-01`
+don't return them. A policy with egress rules fails (Medium) when:
+
+- `mode` is `Audit`: requests that should be denied are logged but still go out;
+- `defaultAction` is `Allow`: any host no rule names is reachable;
+- an `Allow` rule has no `match.host`, or `*`: rules are evaluated in order and the first match wins, so that rule
+  lets everything through before the default action is reached.
+
+Microsoft documents `Enforced` and `Deny` as the defaults when the values are omitted, and says a GET always returns
+the effective values, so a missing value counts as the default. Policies without `egressPolicy` are counted in a note:
+most RAI policies only filter model content. Accounts whose policies can't be read are named in a note; if none can
+be read (no Reader role, or a region or cloud without api-version `2026-09-01`), the test skips. No accounts, or no
+policy with egress rules, is a pass.
+
+What it can't see: hosted agents are a Foundry data-plane object (`Microsoft.CognitiveServices.Data/accounts/projects/agents`),
+not an Azure Resource Manager resource, so a hosted agent that uses no RAI policy with egress rules isn't found. The
+result points to the Azure Policy built-in *Microsoft Foundry hosted agents should enforce resolved RAI egress
+restrictions* (`d279dbb1-e60e-4ca0-8c2f-cc7a0f46166b`, preview in six regions) for that. Transform rules' static header
+values are write-only and never returned, so they aren't checked.
+
+Data source facts are from Microsoft Learn: [Add guardrails to a hosted agent](https://learn.microsoft.com/azure/foundry/agents/how-to/add-hosted-agent-guardrails#network-egress-controls),
+[Govern hosted agent egress with Azure Policy](https://learn.microsoft.com/azure/foundry/agents/how-to/govern-hosted-agent-egress-azure-policy)
+and the [raiPolicies 2026-09-01 reference](https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/2026-09-01/accounts/raipolicies).
+Network egress controls for hosted agents became generally available on Nov 17, 2026 (Azure update 571821); Transform
+rules are still in preview.
+
+Frameworks: MCSB v2 AI-4 (least privilege for agent functions: "allowing only predefined, approved endpoints"); OWASP
+ASI02 (tool misuse and exploitation); NIST 800-53 SC-7 (boundary protection).
+
+> [!NOTE]
+> **Not yet validated** against a live tenant. Unit-tested only (Pester, mocked data), and the RAI policy shape follows
+> Microsoft's reference, not a live sample. Validate with a hosted agent whose guardrail has egress rules: run once in
+> `Audit` (expect Fail), then `Enforced` with default `Deny` (expect Pass).
